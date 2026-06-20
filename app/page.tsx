@@ -517,6 +517,72 @@ export default function Home() {
               <p style={{ fontSize: 15, lineHeight: 1.8, color: '#44403c', whiteSpace: 'pre-line' }}>{result.aiRecommendation}</p>
             </div>
 
+            {/* Funding Matches */}
+            <div style={{ background: '#fff', border: '1px solid #e2ded8', borderRadius: 16, overflow: 'hidden' }}>
+              <div style={{ padding: '20px 24px', borderBottom: '1px solid #f0ede8', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#1c1917' }}>💰 Funding & Grant Matches</div>
+                  <div style={{ fontSize: 12, color: '#78716c', marginTop: 2 }}>Opportunities matched to your stage and industry</div>
+                </div>
+                <div style={{ fontSize: 11, fontWeight: 700, background: 'rgba(79,70,229,0.08)', color: '#4f46e5', padding: '4px 10px', borderRadius: 20 }}>
+                  {form.stage} · {form.industry}
+                </div>
+              </div>
+
+              {/* Visible matches */}
+              {[
+                { name: 'Innovate UK Smart Grant', type: 'Government Grant', amount: '£25,000 – £500,000', match: 94, tag: '🏛️ Grant', deadline: 'Rolling' },
+                { name: 'Seedcamp Fund VIII', type: 'Pre-Seed VC', amount: '$500K – $1M', match: 88, tag: '💸 VC', deadline: 'Open' },
+              ].map((f, i) => (
+                <div key={i} style={{ padding: '16px 24px', borderBottom: '1px solid #f0ede8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 10, background: '#f7f6f3', border: '1px solid #e2ded8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>
+                      {f.tag.split(' ')[0]}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: '#1c1917' }}>{f.name}</div>
+                      <div style={{ fontSize: 12, color: '#78716c', marginTop: 2 }}>{f.type} · {f.amount} · Deadline: {f.deadline}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#059669', background: 'rgba(5,150,105,0.08)', padding: '4px 10px', borderRadius: 20 }}>{f.match}% match</div>
+                    <button style={{ fontSize: 12, fontWeight: 600, color: '#4f46e5', background: 'rgba(79,70,229,0.06)', border: '1px solid rgba(79,70,229,0.2)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer' }}>Apply →</button>
+                  </div>
+                </div>
+              ))}
+
+              {/* Blurred locked matches */}
+              <div style={{ position: 'relative' }}>
+                {[
+                  { name: 'Horizon Europe EIC Accelerator', type: 'EU Grant', amount: '€500K – €2.5M', match: 91, tag: '🏛️' },
+                  { name: 'Y Combinator W25', type: 'Accelerator', amount: '$500K', match: 85, tag: '🚀' },
+                  { name: 'British Business Bank Start Up Loans', type: 'Govt Loan', amount: '£500 – £25,000', match: 82, tag: '🏦' },
+                  { name: 'Antler Residency Programme', type: 'Pre-Seed VC', amount: '$250K', match: 79, tag: '💸' },
+                ].map((f, i) => (
+                  <div key={i} style={{ padding: '16px 24px', borderBottom: '1px solid #f0ede8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, filter: 'blur(4px)', userSelect: 'none', pointerEvents: 'none' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: 10, background: '#f7f6f3', border: '1px solid #e2ded8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>{f.tag}</div>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#1c1917' }}>{f.name}</div>
+                        <div style={{ fontSize: 12, color: '#78716c', marginTop: 2 }}>{f.type} · {f.amount}</div>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#059669', background: 'rgba(5,150,105,0.08)', padding: '4px 10px', borderRadius: 20 }}>{f.match}% match</div>
+                  </div>
+                ))}
+
+                {/* Lock overlay */}
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(247,246,243,0.7)', backdropFilter: 'blur(2px)', gap: 10 }}>
+                  <div style={{ fontSize: 28 }}>🔒</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: '#1c1917', letterSpacing: '-0.02em' }}>4 more matches locked</div>
+                  <div style={{ fontSize: 13, color: '#78716c', textAlign: 'center', maxWidth: 280 }}>Upgrade to Premium to see all funding sources, grants, and accelerators you qualify for</div>
+                  <button style={{ marginTop: 4, padding: '10px 24px', borderRadius: 10, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', color: '#fff', fontWeight: 700, fontSize: 13, boxShadow: '0 4px 14px rgba(79,70,229,0.35)' }}>
+                    Unlock Premium →
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* Premium unlock banner */}
             <div style={{ borderRadius: 18, overflow: 'hidden', border: '1px solid rgba(99,102,241,0.25)' }}>
               <div style={{ background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 55%, #4338ca 100%)', padding: '32px 32px 28px' }}>
