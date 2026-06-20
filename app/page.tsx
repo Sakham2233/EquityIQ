@@ -4,6 +4,7 @@ import { useSession, signIn, signOut } from 'next-auth/react'
 import { StartupInput, EquityIQResult } from '@/lib/types'
 import { fmt$, fmtPct } from '@/lib/utils'
 import { calcNegotiationScenarios, calcRunwayScenarios } from '@/lib/engines'
+import { getBenchmark, BENCHMARK_LABELS, type Benchmark } from '@/lib/benchmarks'
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid, Legend
@@ -244,6 +245,31 @@ export default function Home() {
   type CouncilAgent = { id: string; name: string; role: string; emoji: string; color: string; bg: string; border: string; verdict: string; priority: string; risk: string }
   const [council, setCouncil] = useState<CouncilAgent[] | null>(null)
   const [councilLoading, setCouncilLoading] = useState(false)
+
+  type FAQ = { question: string; answer: string }
+  const [faqs, setFaqs] = useState<FAQ[] | null>(null)
+  const [faqLoading, setFaqLoading] = useState(false)
+  const [faqOpen, setFaqOpen] = useState<number | null>(null)
+
+  async function handleFAQ() {
+    if (!result) return
+    setFaqLoading(true)
+    try {
+      const res = await fetch('/api/faq', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: form, result }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setFaqs(data)
+      setFaqOpen(0)
+    } catch {
+      // silently fail — user can retry
+    } finally {
+      setFaqLoading(false)
+    }
+  }
 
   async function handleDownloadPDF(targetId: string, filename: string) {
     setDownloading(true)
@@ -638,6 +664,67 @@ export default function Home() {
                 sub="after all modelled rounds" color="#059669" bg="rgba(5,150,105,0.04)" />
             </div>
 
+            {/* ── Industry Benchmarks ── */}
+            {(() => {
+              const bm = getBenchmark(form.stage, form.industry)
+              type BmKey = keyof Benchmark
+              const rows: { key: BmKey; yours: number | null; median: number; fmt: (n: number) => string; lowerIsBetter?: boolean }[] = [
+                { key: 'arr',         yours: form.arr > 0 ? form.arr : null,               median: bm.arr,         fmt: n => fmt$(n, currency.symbol) },
+                { key: 'growthRate',  yours: form.growthRate > 0 ? form.growthRate : null,  median: bm.growthRate,  fmt: n => `${n}%` },
+                { key: 'grossMargin', yours: form.grossMargin > 0 ? form.grossMargin : null, median: bm.grossMargin, fmt: n => `${n}%` },
+                { key: 'churnRate',   yours: form.churnRate > 0 ? form.churnRate : null,    median: bm.churnRate,   fmt: n => `${n}%`, lowerIsBetter: true },
+                { key: 'burnRate',    yours: form.burnRate > 0 ? form.burnRate : null,      median: bm.burnRate,    fmt: n => fmt$(n, currency.symbol), lowerIsBetter: true },
+                { key: 'runway',      yours: form.runway > 0 ? form.runway : null,          median: bm.runway,      fmt: n => `${n} mo` },
+                ...(bm.arrMultiple > 0 && form.arr > 0 && form.valuation > 0
+                  ? [{ key: 'arrMultiple' as BmKey, yours: Math.round(form.valuation / form.arr), median: bm.arrMultiple, fmt: (n: number) => `${n}x` }]
+                  : []),
+              ]
+              return (
+                <Card>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                    <SectionTitle style={{ margin: 0 }}>Industry Benchmarks</SectionTitle>
+                    <span style={{ fontSize: 12, color: '#78716c', background: '#f7f6f3', border: '1px solid #e2ded8', borderRadius: 20, padding: '3px 12px' }}>
+                      Median · {form.stage} {form.industry}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                    {rows.map((row, i) => {
+                      const hasVal = row.yours !== null
+                      const above = hasVal && row.yours! > row.median
+                      const good = row.lowerIsBetter ? !above : above
+                      const pct = hasVal ? Math.round(((row.yours! - row.median) / row.median) * 100) : 0
+                      const barPct = hasVal ? Math.min(Math.abs(pct), 100) : 0
+                      return (
+                        <div key={row.key} style={{ display: 'grid', gridTemplateColumns: '160px 1fr 90px 90px', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: i < rows.length - 1 ? '1px solid #f0ede8' : 'none' }}>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: '#78716c' }}>{BENCHMARK_LABELS[row.key]}</span>
+                          <div style={{ position: 'relative', height: 6, background: '#f0ede8', borderRadius: 3, overflow: 'visible' }}>
+                            {/* median marker */}
+                            <div style={{ position: 'absolute', left: '50%', top: -3, width: 2, height: 12, background: '#c8c4be', borderRadius: 1 }} />
+                            {hasVal && (
+                              <div style={{ position: 'absolute', left: above ? '50%' : `${50 - barPct / 2}%`, width: `${barPct / 2}%`, height: '100%', background: good ? '#059669' : '#dc2626', borderRadius: 3, opacity: 0.7 }} />
+                            )}
+                          </div>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#1c1917', textAlign: 'right' }}>{hasVal ? row.fmt(row.yours!) : '—'}</span>
+                          <span style={{ fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
+                            {hasVal ? (
+                              <span style={{ fontWeight: 700, color: good ? '#059669' : '#dc2626', background: good ? 'rgba(5,150,105,0.08)' : 'rgba(220,38,38,0.08)', borderRadius: 6, padding: '2px 7px' }}>
+                                {pct > 0 ? '+' : ''}{pct}%
+                              </span>
+                            ) : (
+                              <span style={{ color: '#a8a29e', fontSize: 11 }}>vs {row.fmt(row.median)}</span>
+                            )}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div style={{ marginTop: 14, fontSize: 11, color: '#a8a29e' }}>
+                    Benchmarks are median values for funded {form.stage} {form.industry} companies. Green = above median, red = below (or above for churn/burn).
+                  </div>
+                </Card>
+              )
+            })()}
+
             {/* Dilution chart */}
             <Card>
               <SectionTitle>Ownership Dilution Over Rounds</SectionTitle>
@@ -769,6 +856,66 @@ export default function Home() {
                           </div>
                         ))}
                       </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* ── Investor FAQ ── */}
+            <div style={{ background: '#fff', border: '1px solid #e2ded8', borderRadius: 16, overflow: 'hidden' }}>
+              <div style={{ padding: '20px 24px', borderBottom: '1px solid #f0ede8', background: '#fafaf9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: '#1c1917', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span>🎤</span> Investor FAQ Generator
+                  </div>
+                  <div style={{ fontSize: 12, color: '#78716c', marginTop: 3 }}>5 tough questions a VC will ask — with suggested answers using your numbers</div>
+                </div>
+                <button
+                  onClick={handleFAQ}
+                  disabled={faqLoading}
+                  style={{ padding: '9px 20px', borderRadius: 9, border: 'none', background: faqs ? '#f7f6f3' : '#1c1917', color: faqs ? '#44403c' : '#fff', fontSize: 13, fontWeight: 700, cursor: faqLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}
+                >
+                  {faqLoading ? (
+                    <><div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: faqs ? '#44403c' : '#fff', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} /> Generating…</>
+                  ) : faqs ? '↺ Regenerate' : '▶ Generate questions'}
+                </button>
+              </div>
+              {!faqs && !faqLoading && (
+                <div style={{ padding: '28px 24px', textAlign: 'center', color: '#a8a29e', fontSize: 13 }}>
+                  Click to generate the 5 toughest questions an investor will ask — and how to answer them using your actual numbers.
+                </div>
+              )}
+              {faqLoading && (
+                <div style={{ padding: '28px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {[0,1,2,3,4].map(i => (
+                      <div key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: '#4f46e5', opacity: 0.3, animation: `pulse 1s ease-in-out ${i * 0.15}s infinite alternate` }} />
+                    ))}
+                  </div>
+                  <span style={{ fontSize: 13, color: '#78716c' }}>Thinking like a VC…</span>
+                </div>
+              )}
+              {faqs && (
+                <div style={{ padding: '8px 0' }}>
+                  {faqs.map((faq, i) => (
+                    <div key={i} style={{ borderBottom: i < faqs.length - 1 ? '1px solid #f0ede8' : 'none' }}>
+                      <button
+                        onClick={() => setFaqOpen(faqOpen === i ? null : i)}
+                        style={{ width: '100%', padding: '16px 24px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: 12, textAlign: 'left' }}
+                      >
+                        <div style={{ width: 22, height: 22, borderRadius: 6, background: '#f0ede8', color: '#78716c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0, marginTop: 1 }}>Q{i + 1}</div>
+                        <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: '#1c1917', lineHeight: 1.5 }}>{faq.question}</span>
+                        <span style={{ fontSize: 16, color: '#a8a29e', flexShrink: 0, transform: faqOpen === i ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>›</span>
+                      </button>
+                      {faqOpen === i && (
+                        <div style={{ padding: '0 24px 18px 58px' }}>
+                          <div style={{ background: 'rgba(79,70,229,0.05)', border: '1px solid rgba(79,70,229,0.15)', borderRadius: 10, padding: '14px 16px' }}>
+                            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#4f46e5', marginBottom: 8 }}>💡 Suggested answer</div>
+                            <p style={{ fontSize: 13, color: '#1c1917', lineHeight: 1.65, margin: 0 }}>{faq.answer}</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
