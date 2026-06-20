@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSession, signIn, signOut } from 'next-auth/react'
 import { StartupInput, EquityIQResult } from '@/lib/types'
 import { fmt$, fmtPct } from '@/lib/utils'
@@ -166,6 +166,48 @@ export default function Home() {
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong')
     } finally { setLoading(false) }
+  }
+
+  // Restore shared result from URL on load
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const shared = params.get('share')
+    if (shared) {
+      try {
+        const decoded = JSON.parse(atob(decodeURIComponent(shared)))
+        setForm(decoded.form)
+        setResult(decoded.result)
+        setScreen('results')
+      } catch { /* invalid share link */ }
+    }
+  }, [])
+
+  const [copying, setCopying] = useState(false)
+  const [downloading, setDownloading] = useState(false)
+
+  async function handleDownloadPDF(targetId: string, filename: string) {
+    setDownloading(true)
+    try {
+      const { default: html2canvas } = await import('html2canvas')
+      const { jsPDF } = await import('jspdf')
+      const el = document.getElementById(targetId)
+      if (!el) return
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#f7f6f3' })
+      const imgData = canvas.toDataURL('image/png')
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: [canvas.width / 2, canvas.height / 2] })
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2)
+      pdf.save(filename)
+    } finally {
+      setDownloading(false)
+    }
+  }
+
+  function handleShare() {
+    if (!result) return
+    setCopying(true)
+    const payload = btoa(JSON.stringify({ form, result }))
+    const url = `${window.location.origin}${window.location.pathname}?share=${encodeURIComponent(payload)}`
+    navigator.clipboard.writeText(url).finally(() => setTimeout(() => setCopying(false), 2000))
   }
 
   const timingBadge = result ? {
@@ -418,6 +460,17 @@ export default function Home() {
         {screen === 'results' && result && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
+            {/* Action bar */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button onClick={handleShare} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, border: '1px solid #e2ded8', background: '#fff', color: '#44403c', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                {copying ? '✓ Link copied!' : '🔗 Share results'}
+              </button>
+              <button onClick={() => handleDownloadPDF('results-content', `${form.name}-results.pdf`)} disabled={downloading} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, border: 'none', background: '#4f46e5', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                {downloading ? 'Generating…' : '⬇ Download PDF'}
+              </button>
+            </div>
+
+            <div id="results-content">
             {/* Title row */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
               <div>
@@ -626,12 +679,25 @@ export default function Home() {
             }}>
               View Raise Now vs Raise Later →
             </button>
+            </div> {/* end results-content */}
           </div>
         )}
 
         {/* ── Screen 3: Scenario Comparison ── */}
         {screen === 'compare' && result && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+            {/* Action bar */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button onClick={handleShare} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, border: '1px solid #e2ded8', background: '#fff', color: '#44403c', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                {copying ? '✓ Link copied!' : '🔗 Share scenarios'}
+              </button>
+              <button onClick={() => handleDownloadPDF('compare-content', `${form.name}-scenarios.pdf`)} disabled={downloading} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, border: 'none', background: '#4f46e5', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                {downloading ? 'Generating…' : '⬇ Download PDF'}
+              </button>
+            </div>
+
+            <div id="compare-content">
             <div>
               <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em', color: '#1c1917', marginBottom: 8 }}>Scenario Comparison</h1>
               <p style={{ color: '#78716c', fontSize: 14 }}>Raise Now vs Raise Later — modelled with a 40% higher valuation if you wait 6 months and grow.</p>
@@ -711,6 +777,7 @@ export default function Home() {
                 </BarChart>
               </ResponsiveContainer>
             </Card>
+            </div> {/* end compare-content */}
           </div>
         )}
       </main>
