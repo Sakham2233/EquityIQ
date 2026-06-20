@@ -56,9 +56,9 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
   )
 }
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
+function SectionTitle({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#4f46e5', marginBottom: 20 }}>
+    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#4f46e5', marginBottom: 20, ...style }}>
       {children}
     </div>
   )
@@ -136,7 +136,9 @@ export default function Home() {
       const res = await fetch('/api/extract', { method: 'POST', body: fd })
       const extracted = await res.json()
       if (!res.ok) throw new Error(extracted?.error || 'Could not extract data from file')
-      setForm(f => ({ ...f, ...extracted }))
+      // Only auto-fill factual business data — deal terms and cap table must be entered manually
+      const { name, industry, stage, location, arr, mrr, growthRate, burnRate, runway, customerCount, pipelineValue } = extracted
+      setForm(f => ({ ...f, name, industry, stage, location, arr, mrr, growthRate, burnRate, runway, customerCount, pipelineValue }))
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Extraction failed')
       setUploadedFile(null)
@@ -375,7 +377,7 @@ export default function Home() {
                   <div style={{ width: 40, height: 40, background: 'rgba(79,70,229,0.08)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>📄</div>
                   <div>
                     <p style={{ fontSize: 14, fontWeight: 600, color: '#1c1917', margin: 0 }}>{uploadedFile}</p>
-                    <p style={{ fontSize: 12, color: '#059669', margin: 0, marginTop: 2 }}>✓ Form pre-filled from document</p>
+                    <p style={{ fontSize: 12, color: '#059669', margin: 0, marginTop: 2 }}>✓ Company & financials pre-filled — complete deal terms below</p>
                   </div>
                 </div>
                 <button onClick={removeFile} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, border: '1px solid #fecaca', background: '#fef2f2', color: '#dc2626', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
@@ -436,7 +438,10 @@ export default function Home() {
             </Card>
 
             <Card>
-              <SectionTitle>Deal Terms</SectionTitle>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                <SectionTitle style={{ margin: 0 }}>Deal Terms</SectionTitle>
+                {uploadedFile && <span style={{ fontSize: 11, color: '#b45309', background: 'rgba(180,83,9,0.08)', border: '1px solid rgba(180,83,9,0.2)', borderRadius: 6, padding: '3px 8px', fontWeight: 600 }}>✏️ Fill in manually</span>}
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <Field label="Capital Required" value={form.capitalRequired} onChange={set('capitalRequired')} type="number" prefix="$" />
                 <Field label="Pre-Money Valuation" value={form.valuation} onChange={set('valuation')} type="number" prefix="$" />
@@ -446,7 +451,10 @@ export default function Home() {
             </Card>
 
             <Card>
-              <SectionTitle>Current Cap Table</SectionTitle>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                <SectionTitle style={{ margin: 0 }}>Current Cap Table</SectionTitle>
+                {uploadedFile && <span style={{ fontSize: 11, color: '#b45309', background: 'rgba(180,83,9,0.08)', border: '1px solid rgba(180,83,9,0.2)', borderRadius: 6, padding: '3px 8px', fontWeight: 600 }}>✏️ Fill in manually</span>}
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <Field label="Founder %" value={form.founderPct} onChange={set('founderPct')} type="number" suffix="%" />
                 <Field label="Co-Founder %" value={form.coFounderPct} onChange={set('coFounderPct')} type="number" suffix="%" />
