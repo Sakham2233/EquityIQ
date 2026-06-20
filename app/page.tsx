@@ -717,26 +717,70 @@ export default function Home() {
 
       {/* Footer */}
       <footer style={{ borderTop: '1px solid #e2ded8', background: '#fff', marginTop: 40 }}>
-        <div style={{ maxWidth: 880, margin: '0 auto', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          {/* Left: brand + copyright */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 15 }}>⚖️</span>
-            <span style={{ fontWeight: 800, fontSize: 14, letterSpacing: '-0.02em', color: '#1c1917' }}>EquityIQ</span>
-            <span style={{ width: 1, height: 14, background: '#e2ded8', margin: '0 6px' }} />
-            <span style={{ fontSize: 12, color: '#a8a29e' }}>© {new Date().getFullYear()} Built for founders, by founders.</span>
+
+        {/* Top row — stats bar */}
+        <div style={{ borderBottom: '1px solid #f0ede8', background: '#fafaf9' }}>
+          <div style={{ maxWidth: 880, margin: '0 auto', padding: '14px 24px', display: 'flex', flexWrap: 'wrap', gap: 0, justifyContent: 'space-around', alignItems: 'center' }}>
+            {[
+              { value: '500+', label: 'Funding sources tracked' },
+              { value: '5', label: 'Financial engines' },
+              { value: 'GPT-4o', label: 'AI model' },
+              { value: 'Free', label: 'Core plan' },
+            ].map((s, i, arr) => (
+              <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+                <div style={{ textAlign: 'center', padding: '0 28px' }}>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: '#4f46e5', letterSpacing: '-0.03em' }}>{s.value}</div>
+                  <div style={{ fontSize: 11, color: '#a8a29e', marginTop: 2 }}>{s.label}</div>
+                </div>
+                {i < arr.length - 1 && <div style={{ width: 1, height: 28, background: '#e2ded8' }} />}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Main footer row */}
+        <div style={{ maxWidth: 880, margin: '0 auto', padding: '28px 24px', display: 'flex', flexWrap: 'wrap', gap: 32, justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          {/* Brand + description */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 220 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+              <span style={{ fontSize: 18 }}>⚖️</span>
+              <span style={{ fontWeight: 900, fontSize: 16, letterSpacing: '-0.03em', color: '#1c1917' }}>EquityIQ</span>
+            </div>
+            <p style={{ fontSize: 12, color: '#78716c', margin: 0, lineHeight: 1.6 }}>
+              AI-powered fundraising decisions for founders. Know your worth before you raise.
+            </p>
+            <a href="mailto:hello@equityiq.ai" style={{ fontSize: 12, color: '#4f46e5', textDecoration: 'none', marginTop: 2 }}>hello@equityiq.ai</a>
           </div>
 
-          {/* Right: links */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {['How it works', 'About', 'Blog', 'Support', 'Privacy'].map((l, i, arr) => (
-              <span key={l} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 12, color: '#78716c', cursor: 'pointer', whiteSpace: 'nowrap' }}>{l}</span>
-                {i < arr.length - 1 && <span style={{ color: '#e2ded8' }}>·</span>}
-              </span>
+          {/* Product links */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a8a29e', marginBottom: 4 }}>Product</div>
+            {['How it works', 'Dilution Simulator', 'Offer Analyser', 'Scenario Planner', 'Premium'].map(l => (
+              <span key={l} style={{ fontSize: 13, color: '#44403c', cursor: 'pointer' }}>{l}</span>
             ))}
-            <span style={{ color: '#e2ded8', margin: '0 2px' }}>·</span>
-            <a href="mailto:hello@equityiq.ai" style={{ fontSize: 12, color: '#4f46e5', textDecoration: 'none', whiteSpace: 'nowrap' }}>hello@equityiq.ai</a>
           </div>
+
+          {/* Company links */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a8a29e', marginBottom: 4 }}>Company</div>
+            {['About', 'Blog', 'Careers', 'Press'].map(l => (
+              <span key={l} style={{ fontSize: 13, color: '#44403c', cursor: 'pointer' }}>{l}</span>
+            ))}
+          </div>
+
+          {/* Legal + support */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a8a29e', marginBottom: 4 }}>Legal & Support</div>
+            {['Privacy Policy', 'Terms of Use', 'Cookie Policy', 'Support'].map(l => (
+              <span key={l} style={{ fontSize: 13, color: '#44403c', cursor: 'pointer' }}>{l}</span>
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom bar */}
+        <div style={{ borderTop: '1px solid #f0ede8', padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+          <span style={{ fontSize: 12, color: '#a8a29e' }}>© {new Date().getFullYear()} EquityIQ. Built for founders, by founders.</span>
+          <span style={{ fontSize: 12, color: '#a8a29e' }}>Not financial advice. For informational purposes only.</span>
         </div>
       </footer>
     </div>
