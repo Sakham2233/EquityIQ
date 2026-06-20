@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
-import { createRequire } from 'module'
+import { extractText } from 'unpdf'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
@@ -11,11 +11,7 @@ export async function POST(req: NextRequest) {
     if (!file) return NextResponse.json({ error: 'No file uploaded' }, { status: 400 })
 
     const buffer = Buffer.from(await file.arrayBuffer())
-
-    // pdf-parse v1 is CommonJS — use createRequire to load it in ESM context
-    const require = createRequire(import.meta.url)
-    const pdfParse = require('pdf-parse')
-    const { text } = await pdfParse(buffer)
+    const { text } = await extractText(new Uint8Array(buffer), { mergePages: true })
 
     if (!text || text.trim().length < 20) {
       return NextResponse.json(
