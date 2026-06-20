@@ -749,31 +749,14 @@ export default function Home() {
             <p style={{ fontSize: 12, color: '#78716c', margin: 0, lineHeight: 1.6 }}>
               AI-powered fundraising decisions for founders. Know your worth before you raise.
             </p>
-            <a href="mailto:hello@equityiq.ai" style={{ fontSize: 12, color: '#4f46e5', textDecoration: 'none', marginTop: 2 }}>hello@equityiq.ai</a>
+            <a href="mailto:2824642t@student.gla.ac.uk" style={{ fontSize: 12, color: '#4f46e5', textDecoration: 'none', marginTop: 2 }}>2824642t@student.gla.ac.uk</a>
           </div>
 
-          {/* Product links */}
+          {/* Contact */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a8a29e', marginBottom: 4 }}>Product</div>
-            {['How it works', 'Dilution Simulator', 'Offer Analyser', 'Scenario Planner', 'Premium'].map(l => (
-              <span key={l} style={{ fontSize: 13, color: '#44403c', cursor: 'pointer' }}>{l}</span>
-            ))}
-          </div>
-
-          {/* Company links */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a8a29e', marginBottom: 4 }}>Company</div>
-            {['About', 'Blog', 'Careers', 'Press'].map(l => (
-              <span key={l} style={{ fontSize: 13, color: '#44403c', cursor: 'pointer' }}>{l}</span>
-            ))}
-          </div>
-
-          {/* Legal + support */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a8a29e', marginBottom: 4 }}>Legal & Support</div>
-            {['Privacy Policy', 'Terms of Use', 'Cookie Policy', 'Support'].map(l => (
-              <span key={l} style={{ fontSize: 13, color: '#44403c', cursor: 'pointer' }}>{l}</span>
-            ))}
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a8a29e', marginBottom: 4 }}>Contact</div>
+            <a href="mailto:2824642t@student.gla.ac.uk" style={{ fontSize: 13, color: '#4f46e5', textDecoration: 'none' }}>2824642t@student.gla.ac.uk</a>
+            <span style={{ fontSize: 13, color: '#44403c' }}>University of Glasgow</span>
           </div>
         </div>
 
