@@ -738,26 +738,15 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Main footer row */}
-        <div style={{ maxWidth: 880, margin: '0 auto', padding: '28px 24px', display: 'flex', flexWrap: 'wrap', gap: 32, justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          {/* Brand + description */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 220 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-              <span style={{ fontSize: 18 }}>⚖️</span>
-              <span style={{ fontWeight: 900, fontSize: 16, letterSpacing: '-0.03em', color: '#1c1917' }}>EquityIQ</span>
-            </div>
-            <p style={{ fontSize: 12, color: '#78716c', margin: 0, lineHeight: 1.6 }}>
-              AI-powered fundraising decisions for founders. Know your worth before you raise.
-            </p>
-            <a href="mailto:2824642t@student.gla.ac.uk" style={{ fontSize: 12, color: '#4f46e5', textDecoration: 'none', marginTop: 2 }}>2824642t@student.gla.ac.uk</a>
+        {/* Main footer row — single line */}
+        <div style={{ maxWidth: 880, margin: '0 auto', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 16 }}>⚖️</span>
+            <span style={{ fontWeight: 900, fontSize: 14, letterSpacing: '-0.02em', color: '#1c1917' }}>EquityIQ</span>
+            <span style={{ width: 1, height: 14, background: '#e2ded8', margin: '0 4px' }} />
+            <span style={{ fontSize: 12, color: '#78716c' }}>AI-powered fundraising decisions for founders. Know your worth before you raise.</span>
           </div>
-
-          {/* Contact */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#a8a29e', marginBottom: 4 }}>Contact</div>
-            <a href="mailto:2824642t@student.gla.ac.uk" style={{ fontSize: 13, color: '#4f46e5', textDecoration: 'none' }}>2824642t@student.gla.ac.uk</a>
-            <span style={{ fontSize: 13, color: '#44403c' }}>University of Glasgow</span>
-          </div>
+          <a href="mailto:2824642t@student.gla.ac.uk" style={{ fontSize: 12, color: '#4f46e5', textDecoration: 'none', whiteSpace: 'nowrap' }}>2824642t@student.gla.ac.uk</a>
         </div>
 
         {/* Bottom bar */}
