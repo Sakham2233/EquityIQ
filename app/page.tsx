@@ -99,6 +99,7 @@ export default function Home() {
   const [extracting, setExtracting] = useState(false)
   const [error, setError] = useState('')
   const [dragOver, setDragOver] = useState(false)
+  const [uploadedFile, setUploadedFile] = useState<string | null>(null)
 
   // Email/password auth UI state (local-only fallback)
   const [showAuth, setShowAuth] = useState(false)
@@ -127,6 +128,7 @@ export default function Home() {
     if (!file) return
     setExtracting(true)
     setError('')
+    setUploadedFile(file.name)
     try {
       const fd = new FormData()
       fd.append('file', file)
@@ -136,9 +138,18 @@ export default function Home() {
       setForm(f => ({ ...f, ...extracted }))
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Extraction failed')
+      setUploadedFile(null)
     } finally {
       setExtracting(false)
     }
+  }
+
+  function removeFile() {
+    setUploadedFile(null)
+    setForm(DEFAULT)
+    setError('')
+    const input = document.getElementById('pdf-upload') as HTMLInputElement
+    if (input) input.value = ''
   }
 
   function set(key: keyof StartupInput) {
@@ -294,33 +305,48 @@ export default function Home() {
             </div>
 
             {/* PDF Upload */}
-            <div
-              onDragOver={e => { e.preventDefault(); setDragOver(true) }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f) }}
-              style={{
-                border: `2px dashed ${dragOver ? '#4f46e5' : '#ccc9c2'}`,
-                borderRadius: 14, padding: '32px 24px', textAlign: 'center',
-                background: dragOver ? 'rgba(79,70,229,0.04)' : '#fff',
-                transition: 'all 0.15s', cursor: 'pointer',
-              }}
-              onClick={() => document.getElementById('pdf-upload')?.click()}
-            >
-              <input id="pdf-upload" type="file" accept=".pdf" style={{ display: 'none' }}
-                onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }} />
-              {extracting ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 36, height: 36, border: '3px solid #e2ded8', borderTopColor: '#4f46e5', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                  <p style={{ fontSize: 14, color: '#78716c', fontWeight: 500 }}>Reading your pitch deck…</p>
+            {uploadedFile ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff', border: '1px solid #e2ded8', borderRadius: 14, padding: '16px 20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 40, height: 40, background: 'rgba(79,70,229,0.08)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>📄</div>
+                  <div>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: '#1c1917', margin: 0 }}>{uploadedFile}</p>
+                    <p style={{ fontSize: 12, color: '#059669', margin: 0, marginTop: 2 }}>✓ Form pre-filled from document</p>
+                  </div>
                 </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                  <div style={{ fontSize: 32 }}>📄</div>
-                  <p style={{ fontSize: 15, fontWeight: 600, color: '#1c1917', margin: 0 }}>Upload pitch deck or document</p>
-                  <p style={{ fontSize: 13, color: '#a8a29e', margin: 0 }}>Drag & drop or click to browse · PDF only · AI will pre-fill the form</p>
-                </div>
-              )}
-            </div>
+                <button onClick={removeFile} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, border: '1px solid #fecaca', background: '#fef2f2', color: '#dc2626', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                  🗑 Remove
+                </button>
+              </div>
+            ) : (
+              <div
+                onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f) }}
+                style={{
+                  border: `2px dashed ${dragOver ? '#4f46e5' : '#ccc9c2'}`,
+                  borderRadius: 14, padding: '32px 24px', textAlign: 'center',
+                  background: dragOver ? 'rgba(79,70,229,0.04)' : '#fff',
+                  transition: 'all 0.15s', cursor: 'pointer',
+                }}
+                onClick={() => document.getElementById('pdf-upload')?.click()}
+              >
+                <input id="pdf-upload" type="file" accept=".pdf" style={{ display: 'none' }}
+                  onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }} />
+                {extracting ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 36, height: 36, border: '3px solid #e2ded8', borderTopColor: '#4f46e5', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                    <p style={{ fontSize: 14, color: '#78716c', fontWeight: 500 }}>Reading your pitch deck…</p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                    <div style={{ fontSize: 32 }}>📄</div>
+                    <p style={{ fontSize: 15, fontWeight: 600, color: '#1c1917', margin: 0 }}>Upload pitch deck or document</p>
+                    <p style={{ fontSize: 13, color: '#a8a29e', margin: 0 }}>Drag & drop or click to browse · PDF only · AI will pre-fill the form</p>
+                  </div>
+                )}
+              </div>
+            )}
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
             <Card>
@@ -367,15 +393,23 @@ export default function Home() {
 
             {error && <p style={{ color: '#dc2626', fontSize: 14, padding: '12px 16px', background: '#fef2f2', borderRadius: 8, border: '1px solid #fecaca' }}>{error}</p>}
 
-            <button onClick={handleSubmit} disabled={loading || !form.name} style={{
-              background: loading || !form.name ? '#e2ded8' : '#4f46e5',
-              color: loading || !form.name ? '#a8a29e' : '#fff',
-              border: 'none', borderRadius: 12, padding: '16px 32px',
-              fontSize: 15, fontWeight: 700, cursor: loading || !form.name ? 'not-allowed' : 'pointer',
-              letterSpacing: '-0.01em', transition: 'background 0.15s',
-            }}>
-              {loading ? 'Running engines…' : 'Run EquityIQ Analysis →'}
-            </button>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button onClick={handleSubmit} disabled={loading || !form.name} style={{
+                flex: 1, background: loading || !form.name ? '#e2ded8' : '#4f46e5',
+                color: loading || !form.name ? '#a8a29e' : '#fff',
+                border: 'none', borderRadius: 12, padding: '16px 32px',
+                fontSize: 15, fontWeight: 700, cursor: loading || !form.name ? 'not-allowed' : 'pointer',
+                letterSpacing: '-0.01em', transition: 'background 0.15s',
+              }}>
+                {loading ? 'Running engines…' : 'Run EquityIQ Analysis →'}
+              </button>
+              <button onClick={() => { setForm(DEFAULT); setUploadedFile(null); setError(''); const input = document.getElementById('pdf-upload') as HTMLInputElement; if (input) input.value = '' }} style={{
+                padding: '16px 24px', borderRadius: 12, border: '1px solid #e2ded8',
+                background: '#fff', color: '#78716c', fontSize: 15, fontWeight: 600, cursor: 'pointer',
+              }}>
+                Clear
+              </button>
+            </div>
 
           </div>
         )}
