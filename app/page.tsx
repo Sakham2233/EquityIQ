@@ -194,10 +194,10 @@ export default function Home() {
           {user ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'default', userSelect: 'none' }}>
-                {user.name.charAt(0).toUpperCase()}
+                {(user.name ?? user.email ?? '?').charAt(0).toUpperCase()}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#1c1917' }}>{user.name}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#1c1917' }}>{user.name ?? user.email}</span>
                 <span style={{ fontSize: 11, color: '#a8a29e' }}>{user.email}</span>
               </div>
               <button onClick={() => { signOut(); setLocalUser(null) }} style={{ marginLeft: 4, fontSize: 12, color: '#a8a29e', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: 6 }}>
