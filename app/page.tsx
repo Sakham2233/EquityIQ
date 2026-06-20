@@ -186,6 +186,10 @@ export default function Home() {
   const [copying, setCopying] = useState(false)
   const [downloading, setDownloading] = useState(false)
 
+  type CouncilAgent = { id: string; name: string; role: string; emoji: string; color: string; bg: string; border: string; verdict: string; priority: string; risk: string }
+  const [council, setCouncil] = useState<CouncilAgent[] | null>(null)
+  const [councilLoading, setCouncilLoading] = useState(false)
+
   async function handleDownloadPDF(targetId: string, filename: string) {
     setDownloading(true)
     try {
@@ -209,6 +213,23 @@ export default function Home() {
     const payload = btoa(JSON.stringify({ form, result }))
     const url = `${window.location.origin}${window.location.pathname}?share=${encodeURIComponent(payload)}`
     navigator.clipboard.writeText(url).finally(() => setTimeout(() => setCopying(false), 2000))
+  }
+
+  async function fetchCouncil() {
+    if (!result) return
+    setCouncilLoading(true)
+    setCouncil(null)
+    try {
+      const res = await fetch('/api/council', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: form, calc: result }),
+      })
+      const data = await res.json()
+      setCouncil(data)
+    } catch { /* silent */ } finally {
+      setCouncilLoading(false)
+    }
   }
 
   const timingBadge = result ? {
@@ -569,6 +590,79 @@ export default function Home() {
                 <span style={{ fontSize: 13, fontWeight: 700, color: '#4f46e5', textTransform: 'uppercase', letterSpacing: '0.08em' }}>AI Recommendation</span>
               </div>
               <p style={{ fontSize: 15, lineHeight: 1.8, color: '#44403c', whiteSpace: 'pre-line' }}>{result.aiRecommendation}</p>
+            </div>
+
+            {/* ── AI Council ── */}
+            <div style={{ background: '#fff', border: '1px solid #e2ded8', borderRadius: 16, overflow: 'hidden' }}>
+              <div style={{ padding: '20px 24px', borderBottom: '1px solid #f0ede8', background: '#fafaf9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: '#1c1917', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span>🧠</span> AI Council
+                  </div>
+                  <div style={{ fontSize: 12, color: '#78716c', marginTop: 3 }}>Four agents, four perspectives — they will disagree. That&apos;s the point.</div>
+                </div>
+                <button
+                  onClick={fetchCouncil}
+                  disabled={councilLoading}
+                  style={{ padding: '9px 20px', borderRadius: 9, border: 'none', background: council ? '#f7f6f3' : '#1c1917', color: council ? '#44403c' : '#fff', fontSize: 13, fontWeight: 700, cursor: councilLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
+                >
+                  {councilLoading ? (
+                    <>
+                      <div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+                      Consulting council…
+                    </>
+                  ) : council ? '↺ Reconvene council' : '▶ Convene the council'}
+                </button>
+              </div>
+
+              {!council && !councilLoading && (
+                <div style={{ padding: '36px 24px', textAlign: 'center', color: '#a8a29e', fontSize: 13 }}>
+                  Four AI agents will each analyse your data from a different angle — a VC bull, a skeptic, an operator, and a founder ally. Click to convene.
+                </div>
+              )}
+
+              {councilLoading && (
+                <div style={{ padding: '36px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                  <div style={{ display: 'flex', gap: 16 }}>
+                    {['🐂', '🐻', '📊', '🛡️'].map((e, i) => (
+                      <div key={i} style={{ width: 44, height: 44, borderRadius: 12, background: '#f7f6f3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, animation: `pulse ${0.8 + i * 0.2}s ease-in-out infinite alternate` }}>{e}</div>
+                    ))}
+                  </div>
+                  <span style={{ fontSize: 13, color: '#78716c' }}>4 agents deliberating in parallel…</span>
+                  <style>{`@keyframes pulse { from { opacity: 0.4; transform: scale(0.95); } to { opacity: 1; transform: scale(1.05); } }`}</style>
+                </div>
+              )}
+
+              {council && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))' }}>
+                  {council.map((agent, i) => (
+                    <div key={agent.id} style={{ padding: '20px 24px', borderBottom: '1px solid #f0ede8', borderRight: i % 2 === 0 ? '1px solid #f0ede8' : 'none', background: agent.bg }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                        <div style={{ width: 36, height: 36, borderRadius: 10, border: `1.5px solid ${agent.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, background: '#fff' }}>{agent.emoji}</div>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 800, color: agent.color }}>{agent.name}</div>
+                          <div style={{ fontSize: 11, color: '#78716c' }}>{agent.role}</div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {[
+                          { label: 'Verdict', text: agent.verdict, icon: '⚖️' },
+                          { label: 'Priority', text: agent.priority, icon: '🎯' },
+                          { label: 'Risk', text: agent.risk, icon: '⚠️' },
+                        ].map(row => (
+                          <div key={row.label} style={{ display: 'flex', gap: 8 }}>
+                            <span style={{ fontSize: 13, flexShrink: 0, marginTop: 1 }}>{row.icon}</span>
+                            <div>
+                              <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#a8a29e' }}>{row.label} </span>
+                              <span style={{ fontSize: 13, color: '#1c1917', lineHeight: 1.6 }}>{row.text}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* ── Negotiation Simulator ── */}
