@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
+import { createRequire } from 'module'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
@@ -11,11 +12,10 @@ export async function POST(req: NextRequest) {
 
     const buffer = Buffer.from(await file.arrayBuffer())
 
-    // pdf-parse v2 exports a class, not a function
-    const { PDFParse } = await import('pdf-parse')
-    const parser = new PDFParse({ data: buffer })
-    const result = await parser.getText()
-    const text = result.text
+    // pdf-parse v1 is CommonJS — use createRequire to load it in ESM context
+    const require = createRequire(import.meta.url)
+    const pdfParse = require('pdf-parse')
+    const { text } = await pdfParse(buffer)
 
     if (!text || text.trim().length < 20) {
       return NextResponse.json(
