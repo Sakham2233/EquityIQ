@@ -123,17 +123,21 @@ export default function Home() {
   const [authName, setAuthName] = useState('')
   const [authEmail, setAuthEmail] = useState('')
   const [authPassword, setAuthPassword] = useState('')
-  const [authError, setAuthError] = useState('')
+  const [authErrors, setAuthErrors] = useState<{ name?: string; email?: string; password?: string }>({})
   const [localUser, setLocalUser] = useState<{ name: string; email: string } | null>(null)
 
   const user = session?.user ?? (localUser ? { name: localUser.name, email: localUser.email, image: null } : null)
 
   function handleAuth(e: React.FormEvent) {
     e.preventDefault()
-    setAuthError('')
-    if (!authEmail.includes('@')) { setAuthError('Enter a valid email.'); return }
-    if (authPassword.length < 6) { setAuthError('Password must be at least 6 characters.'); return }
-    if (authTab === 'signup' && !authName.trim()) { setAuthError('Name is required.'); return }
+    const errs: { name?: string; email?: string; password?: string } = {}
+    if (authTab === 'signup' && !authName.trim()) errs.name = 'Full name is required.'
+    if (!authEmail.trim()) errs.email = 'Email address is required.'
+    else if (!authEmail.includes('@') || !authEmail.includes('.')) errs.email = 'Enter a valid email address (e.g. you@startup.com).'
+    if (!authPassword) errs.password = 'Password is required.'
+    else if (authPassword.length < 6) errs.password = 'Password must be at least 6 characters.'
+    if (Object.keys(errs).length) { setAuthErrors(errs); return }
+    setAuthErrors({})
     const name = authTab === 'signup' ? authName.trim() : authEmail.split('@')[0]
     setLocalUser({ name, email: authEmail })
     setShowAuth(false)
@@ -327,7 +331,7 @@ export default function Home() {
             {/* Tabs */}
             <div style={{ display: 'flex', gap: 0, background: '#f7f6f3', borderRadius: 10, padding: 4, marginBottom: 28 }}>
               {(['signin', 'signup'] as const).map(t => (
-                <button key={t} onClick={() => { setAuthTab(t); setAuthError('') }} style={{
+                <button key={t} onClick={() => { setAuthTab(t); setAuthErrors({}) }} style={{
                   flex: 1, padding: '9px 0', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 700,
                   background: authTab === t ? '#fff' : 'transparent',
                   color: authTab === t ? '#1c1917' : '#78716c',
@@ -358,19 +362,24 @@ export default function Home() {
             <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {authTab === 'signup' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: '#78716c', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Full Name</label>
-                  <input value={authName} onChange={e => setAuthName(e.target.value)} placeholder="Jane Smith" style={{ ...inputBase, padding: '11px 14px' }} />
+                  <label style={{ fontSize: 12, fontWeight: 600, color: authErrors.name ? '#dc2626' : '#78716c', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Full Name</label>
+                  <input value={authName} onChange={e => { setAuthName(e.target.value); setAuthErrors(p => ({ ...p, name: undefined })) }} placeholder="Jane Smith"
+                    style={{ ...inputBase, padding: '11px 14px', border: `1px solid ${authErrors.name ? '#fca5a5' : '#e2ded8'}`, background: authErrors.name ? '#fef2f2' : '#fff' }} />
+                  {authErrors.name && <span style={{ fontSize: 12, color: '#dc2626', marginTop: 2 }}>⚠ {authErrors.name}</span>}
                 </div>
               )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#78716c', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Email</label>
-                <input type="email" value={authEmail} onChange={e => setAuthEmail(e.target.value)} placeholder="you@startup.com" style={{ ...inputBase, padding: '11px 14px' }} />
+                <label style={{ fontSize: 12, fontWeight: 600, color: authErrors.email ? '#dc2626' : '#78716c', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Email</label>
+                <input type="email" value={authEmail} onChange={e => { setAuthEmail(e.target.value); setAuthErrors(p => ({ ...p, email: undefined })) }} placeholder="you@startup.com"
+                  style={{ ...inputBase, padding: '11px 14px', border: `1px solid ${authErrors.email ? '#fca5a5' : '#e2ded8'}`, background: authErrors.email ? '#fef2f2' : '#fff' }} />
+                {authErrors.email && <span style={{ fontSize: 12, color: '#dc2626', marginTop: 2 }}>⚠ {authErrors.email}</span>}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#78716c', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Password</label>
-                <input type="password" value={authPassword} onChange={e => setAuthPassword(e.target.value)} placeholder="••••••••" style={{ ...inputBase, padding: '11px 14px' }} />
+                <label style={{ fontSize: 12, fontWeight: 600, color: authErrors.password ? '#dc2626' : '#78716c', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Password</label>
+                <input type="password" value={authPassword} onChange={e => { setAuthPassword(e.target.value); setAuthErrors(p => ({ ...p, password: undefined })) }} placeholder="••••••••"
+                  style={{ ...inputBase, padding: '11px 14px', border: `1px solid ${authErrors.password ? '#fca5a5' : '#e2ded8'}`, background: authErrors.password ? '#fef2f2' : '#fff' }} />
+                {authErrors.password && <span style={{ fontSize: 12, color: '#dc2626', marginTop: 2 }}>⚠ {authErrors.password}</span>}
               </div>
-              {authError && <p style={{ fontSize: 13, color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 14px', margin: 0 }}>{authError}</p>}
               <button type="submit" style={{ marginTop: 4, padding: '13px 0', borderRadius: 10, border: 'none', cursor: 'pointer', background: '#4f46e5', color: '#fff', fontWeight: 700, fontSize: 15 }}>
                 {authTab === 'signin' ? 'Sign in →' : 'Create account →'}
               </button>
