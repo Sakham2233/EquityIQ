@@ -9,6 +9,17 @@ import {
   ResponsiveContainer, CartesianGrid, Legend
 } from 'recharts'
 
+const CURRENCIES = [
+  { code: 'USD', symbol: '$',  flag: '🇺🇸', name: 'US Dollar' },
+  { code: 'GBP', symbol: '£',  flag: '🇬🇧', name: 'British Pound' },
+  { code: 'EUR', symbol: '€',  flag: '🇪🇺', name: 'Euro' },
+  { code: 'INR', symbol: '₹',  flag: '🇮🇳', name: 'Indian Rupee' },
+  { code: 'CAD', symbol: 'C$', flag: '🇨🇦', name: 'Canadian Dollar' },
+  { code: 'AUD', symbol: 'A$', flag: '🇦🇺', name: 'Australian Dollar' },
+  { code: 'SGD', symbol: 'S$', flag: '🇸🇬', name: 'Singapore Dollar' },
+  { code: 'AED', symbol: 'د.إ', flag: '🇦🇪', name: 'UAE Dirham' },
+]
+
 const STAGES: string[] = ['pre-seed', 'seed', 'series-a', 'series-b']
 const INDUSTRIES = ['SaaS', 'FinTech', 'HealthTech', 'DeepTech', 'E-commerce', 'EdTech', 'CleanTech', 'Other']
 
@@ -99,6 +110,7 @@ export default function Home() {
   const [screen, setScreen] = useState<'form' | 'results' | 'compare'>('form')
   const [form, setForm] = useState<StartupInput>(DEFAULT)
   const [result, setResult] = useState<EquityIQResult | null>(null)
+  const [currency, setCurrency] = useState(CURRENCIES[0])
   const [loading, setLoading] = useState(false)
   const [extracting, setExtracting] = useState(false)
   const [error, setError] = useState('')
@@ -271,6 +283,16 @@ export default function Home() {
             </nav>
           )}
 
+          <select
+            value={currency.code}
+            onChange={e => setCurrency(CURRENCIES.find(c => c.code === e.target.value) || CURRENCIES[0])}
+            style={{ fontSize: 13, fontWeight: 600, border: '1px solid #e2ded8', borderRadius: 8, padding: '6px 10px', background: '#fff', color: '#44403c', cursor: 'pointer', outline: 'none' }}
+          >
+            {CURRENCIES.map(c => (
+              <option key={c.code} value={c.code}>{c.flag} {c.code}</option>
+            ))}
+          </select>
+
           {user ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'default', userSelect: 'none' }}>
@@ -433,14 +455,14 @@ export default function Home() {
             <Card>
               <SectionTitle>Financials</SectionTitle>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <Field label="Annual Recurring Revenue" value={form.arr} onChange={set('arr')} type="number" prefix="$" />
-                <Field label="Monthly Recurring Revenue" value={form.mrr} onChange={set('mrr')} type="number" prefix="$" />
+                <Field label="Annual Recurring Revenue" value={form.arr} onChange={set('arr')} type="number" prefix={currency.symbol} />
+                <Field label="Monthly Recurring Revenue" value={form.mrr} onChange={set('mrr')} type="number" prefix={currency.symbol} />
                 <Field label="Monthly Growth Rate" value={form.growthRate} onChange={set('growthRate')} type="number" suffix="%" />
-                <Field label="Monthly Burn Rate" value={form.burnRate} onChange={set('burnRate')} type="number" prefix="$" />
+                <Field label="Monthly Burn Rate" value={form.burnRate} onChange={set('burnRate')} type="number" prefix={currency.symbol} />
                 <Field label="Runway" value={form.runway} onChange={set('runway')} type="number" suffix="months" />
                 <Field label="Customer Count" value={form.customerCount} onChange={set('customerCount')} type="number" />
-                <Field label="Total Raised to Date" value={form.totalRaised} onChange={set('totalRaised')} type="number" prefix="$" />
-                <Field label="Pipeline Value" value={form.pipelineValue} onChange={set('pipelineValue')} type="number" prefix="$" />
+                <Field label="Total Raised to Date" value={form.totalRaised} onChange={set('totalRaised')} type="number" prefix={currency.symbol} />
+                <Field label="Pipeline Value" value={form.pipelineValue} onChange={set('pipelineValue')} type="number" prefix={currency.symbol} />
               </div>
             </Card>
 
@@ -449,8 +471,8 @@ export default function Home() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <Field label="Gross Margin" value={form.grossMargin} onChange={set('grossMargin')} type="number" suffix="%" />
                 <Field label="Monthly Churn Rate" value={form.churnRate} onChange={set('churnRate')} type="number" suffix="%" />
-                <Field label="Customer Acquisition Cost" value={form.cac} onChange={set('cac')} type="number" prefix="$" />
-                <Field label="Avg Revenue Per Customer" value={form.customerCount > 0 ? Math.round(form.arr / form.customerCount) : 0} onChange={() => {}} type="number" prefix="$" />
+                <Field label="Customer Acquisition Cost" value={form.cac} onChange={set('cac')} type="number" prefix={currency.symbol} />
+                <Field label="Avg Revenue Per Customer" value={form.customerCount > 0 ? Math.round(form.arr / form.customerCount) : 0} onChange={() => {}} type="number" prefix={currency.symbol} />
               </div>
               <div style={{ marginTop: 12, padding: '10px 14px', background: '#f7f6f3', borderRadius: 8, display: 'flex', gap: 24, flexWrap: 'wrap' }}>
                 <div style={{ fontSize: 12 }}>
@@ -468,7 +490,7 @@ export default function Home() {
                 <div style={{ fontSize: 12 }}>
                   <span style={{ color: '#78716c' }}>Burn per employee  </span>
                   <span style={{ fontWeight: 700, color: '#1c1917' }}>
-                    {form.teamSize > 0 && form.burnRate > 0 ? `$${Math.round(form.burnRate / form.teamSize).toLocaleString()}` : '—'}
+                    {form.teamSize > 0 && form.burnRate > 0 ? `${currency.symbol}${Math.round(form.burnRate / form.teamSize).toLocaleString()}` : '—'}
                   </span>
                 </div>
               </div>
@@ -480,9 +502,9 @@ export default function Home() {
                 {uploadedFile && <span style={{ fontSize: 11, color: '#b45309', background: 'rgba(180,83,9,0.08)', border: '1px solid rgba(180,83,9,0.2)', borderRadius: 6, padding: '3px 8px', fontWeight: 600 }}>✏️ Fill in manually</span>}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <Field label="Capital Required" value={form.capitalRequired} onChange={set('capitalRequired')} type="number" prefix="$" />
-                <Field label="Pre-Money Valuation" value={form.valuation} onChange={set('valuation')} type="number" prefix="$" />
-                <Field label="Investor Offer" value={form.investorOffer} onChange={set('investorOffer')} type="number" prefix="$" />
+                <Field label="Capital Required" value={form.capitalRequired} onChange={set('capitalRequired')} type="number" prefix={currency.symbol} />
+                <Field label="Pre-Money Valuation" value={form.valuation} onChange={set('valuation')} type="number" prefix={currency.symbol} />
+                <Field label="Investor Offer" value={form.investorOffer} onChange={set('investorOffer')} type="number" prefix={currency.symbol} />
                 <Field label="Equity Requested" value={form.equityRequested} onChange={set('equityRequested')} type="number" suffix="%" />
               </div>
             </Card>
@@ -566,10 +588,10 @@ export default function Home() {
                 value={fmtPct(result.dilutionForecast[result.dilutionForecast.length - 1].founderPct + result.dilutionForecast[result.dilutionForecast.length - 1].coFounderPct)}
                 sub="combined, after all rounds" color="#4f46e5" bg="rgba(79,70,229,0.04)" />
               <StatCard label="Post-Money Valuation"
-                value={fmt$(result.dilutionForecast[0].postMoneyValuation)}
+                value={fmt$(result.dilutionForecast[0].postMoneyValuation, currency.symbol)}
                 sub={`${fmtPct(result.dilutionForecast[0].newInvestorPct)} investor stake`} />
-              <StatCard label="Founder Value at $100M Exit"
-                value={fmt$(result.exitValues.find(e => e.exit === 100_000_000)?.founderValue ?? 0)}
+              <StatCard label={`Founder Value at ${currency.symbol}100M Exit`}
+                value={fmt$(result.exitValues.find(e => e.exit === 100_000_000)?.founderValue ?? 0, currency.symbol)}
                 sub="after all modelled rounds" color="#059669" bg="rgba(5,150,105,0.04)" />
             </div>
 
@@ -603,12 +625,12 @@ export default function Home() {
             <Card>
               <SectionTitle>Founder Value at Exit Scenarios</SectionTitle>
               <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={result.exitValues.map(e => ({ exit: fmt$(e.exit), founder: e.founderValue, coFounder: e.coFounderValue }))} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+                <BarChart data={result.exitValues.map(e => ({ exit: fmt$(e.exit, currency.symbol), founder: e.founderValue, coFounder: e.coFounderValue }))} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0ede8" />
                   <XAxis dataKey="exit" tick={{ fill: '#a8a29e', fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: '#a8a29e', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={v => fmt$(v)} />
+                  <YAxis tick={{ fill: '#a8a29e', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={v => fmt$(v, currency.symbol)} />
                   <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e2ded8', borderRadius: 10, color: '#1c1917', fontSize: 13 }}
-                    formatter={(v) => [fmt$(v as number)]} />
+                    formatter={(v) => [fmt$(v as number, currency.symbol)]} />
                   <Legend wrapperStyle={{ color: '#78716c', fontSize: 12 }} />
                   <Bar dataKey="founder" name="Founder" fill="#4f46e5" radius={[5, 5, 0, 0]} />
                   <Bar dataKey="coFounder" name="Co-Founder" fill="#059669" radius={[5, 5, 0, 0]} />
@@ -738,12 +760,12 @@ export default function Home() {
                         <div style={{ fontSize: 12, color: '#78716c', marginBottom: 12 }}>{s.ask}</div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                           <div style={{ background: '#f7f6f3', borderRadius: 8, padding: '10px 12px' }}>
-                            <div style={{ fontSize: 10, color: '#a8a29e', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>At $50M exit</div>
-                            <div style={{ fontSize: 16, fontWeight: 800, color: '#059669', marginTop: 3 }}>+{fmt$(s.valueAt50M)}</div>
+                            <div style={{ fontSize: 10, color: '#a8a29e', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>At {currency.symbol}50M exit</div>
+                            <div style={{ fontSize: 16, fontWeight: 800, color: '#059669', marginTop: 3 }}>+{fmt$(s.valueAt50M, currency.symbol)}</div>
                           </div>
                           <div style={{ background: '#f7f6f3', borderRadius: 8, padding: '10px 12px' }}>
-                            <div style={{ fontSize: 10, color: '#a8a29e', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>At $100M exit</div>
-                            <div style={{ fontSize: 16, fontWeight: 800, color: '#4f46e5', marginTop: 3 }}>+{fmt$(s.valueAt100M)}</div>
+                            <div style={{ fontSize: 10, color: '#a8a29e', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>At {currency.symbol}100M exit</div>
+                            <div style={{ fontSize: 16, fontWeight: 800, color: '#4f46e5', marginTop: 3 }}>+{fmt$(s.valueAt100M, currency.symbol)}</div>
                           </div>
                         </div>
                       </div>
@@ -943,7 +965,7 @@ export default function Home() {
                     <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8, color: '#1c1917' }}>{r.round}</div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
                       <span style={{ fontSize: 12, color: '#78716c' }}>Pre-money</span>
-                      <span style={{ fontSize: 12, color: '#1c1917', textAlign: 'right', fontWeight: 600 }}>{fmt$(r.preMoneyValuation)}</span>
+                      <span style={{ fontSize: 12, color: '#1c1917', textAlign: 'right', fontWeight: 600 }}>{fmt$(r.preMoneyValuation, currency.symbol)}</span>
                       <span style={{ fontSize: 12, color: '#78716c' }}>Founder ownership</span>
                       <span style={{ fontSize: 12, color: '#4f46e5', textAlign: 'right', fontWeight: 700 }}>{fmtPct(r.founderPct + r.coFounderPct)}</span>
                       <span style={{ fontSize: 12, color: '#78716c' }}>Investor stake</span>
@@ -960,7 +982,7 @@ export default function Home() {
                     <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8, color: '#1c1917' }}>{r.round}</div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
                       <span style={{ fontSize: 12, color: '#78716c' }}>Pre-money</span>
-                      <span style={{ fontSize: 12, color: '#1c1917', textAlign: 'right', fontWeight: 600 }}>{fmt$(r.preMoneyValuation)}</span>
+                      <span style={{ fontSize: 12, color: '#1c1917', textAlign: 'right', fontWeight: 600 }}>{fmt$(r.preMoneyValuation, currency.symbol)}</span>
                       <span style={{ fontSize: 12, color: '#78716c' }}>Founder ownership</span>
                       <span style={{ fontSize: 12, color: '#059669', textAlign: 'right', fontWeight: 700 }}>{fmtPct(r.founderPct + r.coFounderPct)}</span>
                       <span style={{ fontSize: 12, color: '#78716c' }}>Investor stake</span>
@@ -981,7 +1003,7 @@ export default function Home() {
                   <SectionTitle>Impact of Waiting 6 Months</SectionTitle>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
                     <StatCard label="Ownership gain from waiting" value={`${delta >= 0 ? '+' : ''}${fmtPct(delta)}`} color={delta >= 0 ? '#059669' : '#dc2626'} sub="founder + co-founder" />
-                    <StatCard label="Valuation uplift (later)" value={fmt$(latF.postMoneyValuation - nowF.postMoneyValuation)} color="#4f46e5" sub="projected post-money diff" />
+                    <StatCard label="Valuation uplift (later)" value={fmt$(latF.postMoneyValuation - nowF.postMoneyValuation, currency.symbol)} color="#4f46e5" sub="projected post-money diff" />
                     <StatCard label="Recommended path" value={result.recommendedTiming === 'raise-now' ? 'Raise Now' : 'Raise Later'} color="#4f46e5" />
                   </div>
                 </Card>
