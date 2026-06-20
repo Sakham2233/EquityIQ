@@ -22,11 +22,14 @@ export async function POST(req: NextRequest) {
 
     const prompt = `You are a startup data extractor. Read the following pitch deck or document text and extract structured startup information. Return ONLY a valid JSON object with no markdown or explanation. If a value is not found, use 0 for numbers and "" for strings.
 
-Fields to extract:
+IMPORTANT: Only extract company info and financial metrics. Do NOT fill in deal terms, valuation, equity percentages, or cap table — leave those as 0. The founder will fill those in manually.
+
+Fields to extract (company & financials only):
 - name: company name (string)
 - industry: one of SaaS, FinTech, HealthTech, DeepTech, E-commerce, EdTech, CleanTech, Other
 - stage: one of pre-seed, seed, series-a, series-b
 - location: city or country (string)
+- businessModel: one of B2B, B2C, B2B2C, Marketplace, Hardware, Deep Tech (string)
 - arr: annual recurring revenue in USD (number)
 - mrr: monthly recurring revenue in USD (number)
 - growthRate: monthly growth rate as a number e.g. 15 for 15% (number)
@@ -34,14 +37,14 @@ Fields to extract:
 - runway: months of runway remaining (number)
 - customerCount: number of customers (number)
 - pipelineValue: pipeline value in USD (number)
-- capitalRequired: amount being raised in USD (number)
-- valuation: pre-money valuation in USD (number)
-- investorOffer: investor offer amount in USD (number)
-- equityRequested: equity percentage as a number e.g. 20 for 20% (number)
-- founderPct: founder ownership percentage (number)
-- coFounderPct: co-founder ownership percentage (number)
-- employeePoolPct: employee option pool percentage (number)
-- existingInvestorPct: existing investor ownership percentage (number)
+- totalRaised: total funding raised to date in USD (number)
+- teamSize: number of full-time employees (number)
+- grossMargin: gross margin as a percentage e.g. 70 for 70% (number)
+- churnRate: monthly customer churn rate as a percentage e.g. 3 for 3% (number)
+- cac: customer acquisition cost in USD (number)
+
+Do NOT extract these — return 0 for all:
+- capitalRequired, valuation, investorOffer, equityRequested, founderPct, coFounderPct, employeePoolPct, existingInvestorPct
 
 Document text:
 ${text.slice(0, 14000)}`

@@ -9,15 +9,28 @@ export async function POST(req: NextRequest) {
   const input: StartupInput = await req.json()
   const calc = runEngines(input)
 
+  const arpu = input.customerCount > 0 ? Math.round(input.arr / input.customerCount) : 0
+  const ltvCac = input.cac > 0 && input.churnRate > 0 && arpu > 0
+    ? ((arpu / (input.churnRate / 100)) / input.cac).toFixed(1)
+    : 'n/a'
+
   const prompt = `You are EquityIQ, an AI decision engine for startup fundraising. A founder has submitted their startup data and the financial engines have already run all calculations. Your job is to interpret the numbers and give a direct, actionable recommendation. Be specific — reference the actual numbers.
 
 STARTUP: ${input.name} (${input.stage}, ${input.industry}, ${input.location})
+Business model: ${input.businessModel || 'not specified'} | Team: ${input.teamSize || 'unknown'} people | Total raised: $${input.totalRaised?.toLocaleString() || '0'}
 
 FINANCIALS:
 - ARR: $${input.arr.toLocaleString()} | MRR: $${input.mrr.toLocaleString()}
 - Growth rate: ${input.growthRate}% MoM | Burn: $${input.burnRate.toLocaleString()}/mo
 - Runway: ${input.runway} months | Customers: ${input.customerCount}
 - Pipeline: $${input.pipelineValue.toLocaleString()}
+
+UNIT ECONOMICS:
+- Gross margin: ${input.grossMargin || 'n/a'}%
+- Monthly churn: ${input.churnRate || 'n/a'}%
+- CAC: $${input.cac?.toLocaleString() || 'n/a'}
+- LTV:CAC: ${ltvCac}x
+- Rule of 40: ${input.growthRate > 0 || input.grossMargin > 0 ? Math.round(input.growthRate * 12 + input.grossMargin - 100) : 'n/a'}
 
 DEAL TERMS:
 - Seeking: $${input.capitalRequired.toLocaleString()} at $${input.valuation.toLocaleString()} pre-money

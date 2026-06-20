@@ -50,10 +50,20 @@ const AGENTS = [
 export async function POST(req: NextRequest) {
   const { input, calc }: { input: StartupInput; calc: Omit<EquityIQResult, 'aiRecommendation'> } = await req.json()
 
+  const arpu = input.customerCount > 0 ? Math.round(input.arr / input.customerCount) : 0
+  const ltvCac = input.cac > 0 && input.churnRate > 0 && arpu > 0
+    ? ((arpu / (input.churnRate / 100)) / input.cac).toFixed(1)
+    : 'n/a'
+  const rule40 = input.growthRate > 0 || input.grossMargin > 0
+    ? Math.round(input.growthRate * 12 + input.grossMargin - 100)
+    : 'n/a'
+
   const context = `
-STARTUP: ${input.name} (${input.stage}, ${input.industry}, ${input.location || 'undisclosed'})
+STARTUP: ${input.name} (${input.stage}, ${input.industry}, ${input.location || 'undisclosed'}, ${input.businessModel || 'unknown model'})
+Team: ${input.teamSize || 'unknown'} people | Total raised to date: $${input.totalRaised?.toLocaleString() || '0'}
 ARR: $${input.arr.toLocaleString()} | MRR: $${input.mrr.toLocaleString()} | Growth: ${input.growthRate}%/mo
 Burn: $${input.burnRate.toLocaleString()}/mo | Runway: ${input.runway} months | Customers: ${input.customerCount}
+Gross margin: ${input.grossMargin || 'n/a'}% | Monthly churn: ${input.churnRate || 'n/a'}% | CAC: $${input.cac || 'n/a'} | LTV:CAC: ${ltvCac}x | Rule of 40: ${rule40}
 Seeking: $${input.capitalRequired.toLocaleString()} at $${input.valuation.toLocaleString()} pre-money
 Investor offer: $${input.investorOffer.toLocaleString()} for ${input.equityRequested}% equity
 Cap table: Founders ${input.founderPct + input.coFounderPct}% | ESOP ${input.employeePoolPct}% | Existing investors ${input.existingInvestorPct}%

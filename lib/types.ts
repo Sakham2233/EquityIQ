@@ -13,6 +13,12 @@ export interface StartupInput {
   runway: number     // Months of runway
   customerCount: number
   pipelineValue: number
+  grossMargin: number    // Gross margin (%)
+  churnRate: number      // Monthly churn (%)
+  cac: number            // Customer Acquisition Cost ($)
+  teamSize: number       // Number of full-time employees
+  totalRaised: number    // Total funding raised to date ($)
+  businessModel: string  // B2B / B2C / Marketplace / B2B2C
 
   // Deal terms
   capitalRequired: number  // $ seeking

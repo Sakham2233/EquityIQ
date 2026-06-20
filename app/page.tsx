@@ -13,11 +13,14 @@ const STAGES: string[] = ['pre-seed', 'seed', 'series-a', 'series-b']
 const INDUSTRIES = ['SaaS', 'FinTech', 'HealthTech', 'DeepTech', 'E-commerce', 'EdTech', 'CleanTech', 'Other']
 
 const DEFAULT: StartupInput = {
-  name: '', industry: 'SaaS', stage: 'seed', location: '',
+  name: '', industry: 'SaaS', stage: 'seed', location: '', businessModel: 'B2B',
   arr: 0, mrr: 0, growthRate: 0, burnRate: 0, runway: 0, customerCount: 0, pipelineValue: 0,
+  grossMargin: 0, churnRate: 0, cac: 0, teamSize: 0, totalRaised: 0,
   capitalRequired: 0, valuation: 0, investorOffer: 0, equityRequested: 0,
   founderPct: 0, coFounderPct: 0, employeePoolPct: 0, existingInvestorPct: 0,
 }
+
+const BUSINESS_MODELS = ['B2B', 'B2C', 'B2B2C', 'Marketplace', 'Hardware', 'Deep Tech']
 
 const inputBase: React.CSSProperties = {
   width: '100%', background: '#fff', border: '1px solid #e2ded8',
@@ -137,8 +140,8 @@ export default function Home() {
       const extracted = await res.json()
       if (!res.ok) throw new Error(extracted?.error || 'Could not extract data from file')
       // Only auto-fill factual business data — deal terms and cap table must be entered manually
-      const { name, industry, stage, location, arr, mrr, growthRate, burnRate, runway, customerCount, pipelineValue } = extracted
-      setForm(f => ({ ...f, name, industry, stage, location, arr, mrr, growthRate, burnRate, runway, customerCount, pipelineValue }))
+      const { name, industry, stage, location, businessModel, arr, mrr, growthRate, burnRate, runway, customerCount, pipelineValue, totalRaised, teamSize, grossMargin, churnRate, cac } = extracted
+      setForm(f => ({ ...f, name, industry, stage, location, businessModel: businessModel || f.businessModel, arr, mrr, growthRate, burnRate, runway, customerCount, pipelineValue, totalRaised: totalRaised || f.totalRaised, teamSize: teamSize || f.teamSize, grossMargin: grossMargin || f.grossMargin, churnRate: churnRate || f.churnRate, cac: cac || f.cac }))
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Extraction failed')
       setUploadedFile(null)
@@ -422,6 +425,8 @@ export default function Home() {
                 <Field label="Industry" value={form.industry} onChange={set('industry')} options={INDUSTRIES} />
                 <Field label="Stage" value={form.stage} onChange={set('stage')} options={STAGES} />
                 <Field label="Location" value={form.location} onChange={set('location')} />
+                <Field label="Business Model" value={form.businessModel} onChange={set('businessModel')} options={BUSINESS_MODELS} />
+                <Field label="Team Size" value={form.teamSize} onChange={set('teamSize')} type="number" suffix="people" />
               </div>
             </Card>
 
@@ -434,6 +439,38 @@ export default function Home() {
                 <Field label="Monthly Burn Rate" value={form.burnRate} onChange={set('burnRate')} type="number" prefix="$" />
                 <Field label="Runway" value={form.runway} onChange={set('runway')} type="number" suffix="months" />
                 <Field label="Customer Count" value={form.customerCount} onChange={set('customerCount')} type="number" />
+                <Field label="Total Raised to Date" value={form.totalRaised} onChange={set('totalRaised')} type="number" prefix="$" />
+                <Field label="Pipeline Value" value={form.pipelineValue} onChange={set('pipelineValue')} type="number" prefix="$" />
+              </div>
+            </Card>
+
+            <Card>
+              <SectionTitle>Unit Economics</SectionTitle>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <Field label="Gross Margin" value={form.grossMargin} onChange={set('grossMargin')} type="number" suffix="%" />
+                <Field label="Monthly Churn Rate" value={form.churnRate} onChange={set('churnRate')} type="number" suffix="%" />
+                <Field label="Customer Acquisition Cost" value={form.cac} onChange={set('cac')} type="number" prefix="$" />
+                <Field label="Avg Revenue Per Customer" value={form.customerCount > 0 ? Math.round(form.arr / form.customerCount) : 0} onChange={() => {}} type="number" prefix="$" />
+              </div>
+              <div style={{ marginTop: 12, padding: '10px 14px', background: '#f7f6f3', borderRadius: 8, display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+                <div style={{ fontSize: 12 }}>
+                  <span style={{ color: '#78716c' }}>LTV:CAC  </span>
+                  <span style={{ fontWeight: 700, color: form.cac > 0 && form.churnRate > 0 ? '#4f46e5' : '#a8a29e' }}>
+                    {form.cac > 0 && form.churnRate > 0 ? `${((form.arr / form.customerCount || 0) / (form.churnRate / 100) / form.cac).toFixed(1)}x` : '—'}
+                  </span>
+                </div>
+                <div style={{ fontSize: 12 }}>
+                  <span style={{ color: '#78716c' }}>Rule of 40  </span>
+                  <span style={{ fontWeight: 700, color: (form.growthRate * 12 + form.grossMargin - 100) >= 40 ? '#059669' : '#b45309' }}>
+                    {form.growthRate > 0 || form.grossMargin > 0 ? `${Math.round(form.growthRate * 12 + form.grossMargin - 100)}` : '—'}
+                  </span>
+                </div>
+                <div style={{ fontSize: 12 }}>
+                  <span style={{ color: '#78716c' }}>Burn per employee  </span>
+                  <span style={{ fontWeight: 700, color: '#1c1917' }}>
+                    {form.teamSize > 0 && form.burnRate > 0 ? `$${Math.round(form.burnRate / form.teamSize).toLocaleString()}` : '—'}
+                  </span>
+                </div>
               </div>
             </Card>
 

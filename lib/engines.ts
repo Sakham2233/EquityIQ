@@ -40,7 +40,31 @@ export function calcReadinessScore(input: StartupInput): { score: number; flags:
   if (input.customerCount >= stageCustomerMin[input.stage]) { score += 10 }
   else { score += 4; flags.push('Customer count below typical for stage') }
 
-  return { score: Math.min(100, score), flags }
+  // Gross margin / Rule of 40 (bonus up to +10, penalty -10)
+  if (input.grossMargin > 0) {
+    const rule40 = input.growthRate * 12 + input.grossMargin - 100 // annualised growth + margin - cost base
+    if (rule40 >= 40) { score += 10 }
+    else if (rule40 >= 20) { score += 5 }
+    else if (rule40 < 0) { score -= 10; flags.push('Rule of 40 is negative — growth + margins are poor') }
+    if (input.grossMargin < 50 && input.industry === 'SaaS') { flags.push('Gross margin below 50% is low for SaaS') }
+  }
+
+  // Churn rate (penalty only)
+  if (input.churnRate > 0) {
+    if (input.churnRate > 10) { score -= 10; flags.push(`Monthly churn of ${input.churnRate}% is high — investors will discount MRR`) }
+    else if (input.churnRate > 5) { score -= 5; flags.push('Monthly churn above 5% — retention needs improvement') }
+  }
+
+  // LTV:CAC ratio (bonus up to +5)
+  if (input.cac > 0 && input.churnRate > 0 && input.customerCount > 0) {
+    const arpu = input.arr / input.customerCount
+    const ltv = arpu / (input.churnRate / 100)
+    const ltvCac = ltv / input.cac
+    if (ltvCac >= 3) { score += 5 }
+    else if (ltvCac < 1) { score -= 5; flags.push('LTV:CAC below 1x — acquiring customers costs more than they are worth') }
+  }
+
+  return { score: Math.min(100, Math.max(0, score)), flags }
 }
 
 // ── 2. Equity Dilution Simulator ─────────────────────────────────────────────
@@ -151,6 +175,19 @@ export function calcOfferQuality(input: StartupInput): { score: number; flags: s
   if (input.capitalRequired < minCap || input.capitalRequired > maxCap) {
     score -= 10
     flags.push(`Capital ask of $${(input.capitalRequired / 1_000_000).toFixed(1)}M is outside typical range for ${input.stage}`)
+  }
+
+  // High gross margin boosts offer quality (+5 for SaaS-like margins)
+  if (input.grossMargin >= 70) { score += 5 }
+  else if (input.grossMargin > 0 && input.grossMargin < 40) {
+    score -= 10
+    flags.push(`Gross margin of ${input.grossMargin}% is low — investors will demand a lower valuation`)
+  }
+
+  // High churn is a red flag for offer quality
+  if (input.churnRate > 5) {
+    score -= 10
+    flags.push('High churn undermines the ARR multiple justification')
   }
 
   return { score: Math.max(0, Math.min(100, score)), flags }
