@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useSession, signIn, signOut } from 'next-auth/react'
 import { StartupInput, EquityIQResult } from '@/lib/types'
 import { fmt$, fmtPct } from '@/lib/utils'
+import { calcNegotiationScenarios, calcRunwayScenarios } from '@/lib/engines'
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid, Legend
@@ -569,6 +570,97 @@ export default function Home() {
               </div>
               <p style={{ fontSize: 15, lineHeight: 1.8, color: '#44403c', whiteSpace: 'pre-line' }}>{result.aiRecommendation}</p>
             </div>
+
+            {/* ── Negotiation Simulator ── */}
+            {(() => {
+              const scenarios = calcNegotiationScenarios(form)
+              if (!scenarios.length) return null
+              return (
+                <div style={{ background: '#fff', border: '1px solid #e2ded8', borderRadius: 16, overflow: 'hidden' }}>
+                  <div style={{ padding: '20px 24px', borderBottom: '1px solid #f0ede8', background: '#fafaf9', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: '#1c1917', display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span>⚡</span> Term Sheet Negotiation Simulator
+                      </div>
+                      <div style={{ fontSize: 12, color: '#78716c', marginTop: 3 }}>Exact dollar value of each negotiation — ranked by what&apos;s worth fighting for most</div>
+                    </div>
+                    <div style={{ fontSize: 11, background: 'rgba(79,70,229,0.08)', color: '#4f46e5', fontWeight: 700, padding: '4px 10px', borderRadius: 20, whiteSpace: 'nowrap' }}>Deterministic · Not AI</div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 0 }}>
+                    {scenarios.map((s, i) => (
+                      <div key={i} style={{ padding: '20px 24px', borderBottom: '1px solid #f0ede8', borderRight: i % 2 === 0 ? '1px solid #f0ede8' : 'none' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ width: 22, height: 22, borderRadius: 6, background: s.priority === 1 ? '#4f46e5' : '#f0ede8', color: s.priority === 1 ? '#fff' : '#78716c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800 }}>#{s.priority}</div>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: '#1c1917' }}>{s.title}</span>
+                          </div>
+                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: s.difficulty === 'Easy' ? 'rgba(5,150,105,0.08)' : s.difficulty === 'Medium' ? 'rgba(180,83,9,0.08)' : 'rgba(220,38,38,0.08)', color: s.difficulty === 'Easy' ? '#059669' : s.difficulty === 'Medium' ? '#b45309' : '#dc2626' }}>{s.difficulty}</span>
+                        </div>
+                        <div style={{ fontSize: 12, color: '#78716c', marginBottom: 12 }}>{s.ask}</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                          <div style={{ background: '#f7f6f3', borderRadius: 8, padding: '10px 12px' }}>
+                            <div style={{ fontSize: 10, color: '#a8a29e', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>At $50M exit</div>
+                            <div style={{ fontSize: 16, fontWeight: 800, color: '#059669', marginTop: 3 }}>+{fmt$(s.valueAt50M)}</div>
+                          </div>
+                          <div style={{ background: '#f7f6f3', borderRadius: 8, padding: '10px 12px' }}>
+                            <div style={{ fontSize: 10, color: '#a8a29e', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>At $100M exit</div>
+                            <div style={{ fontSize: 16, fontWeight: 800, color: '#4f46e5', marginTop: 3 }}>+{fmt$(s.valueAt100M)}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })()}
+
+            {/* ── Runway Extension Planner ── */}
+            {(() => {
+              if (!form.burnRate || !form.runway) return null
+              const scenarios = calcRunwayScenarios(form)
+              const baseScore = result.raiseReadinessScore
+              return (
+                <div style={{ background: '#fff', border: '1px solid #e2ded8', borderRadius: 16, overflow: 'hidden' }}>
+                  <div style={{ padding: '20px 24px', borderBottom: '1px solid #f0ede8', background: '#fafaf9', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: '#1c1917', display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span>📈</span> Runway Extension Planner
+                      </div>
+                      <div style={{ fontSize: 12, color: '#78716c', marginTop: 3 }}>Exactly what changes move the needle — modelled against your current numbers</div>
+                    </div>
+                    <div style={{ fontSize: 11, background: 'rgba(5,150,105,0.08)', color: '#059669', fontWeight: 700, padding: '4px 10px', borderRadius: 20, whiteSpace: 'nowrap' }}>Deterministic · Not AI</div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                    {scenarios.map((s, i) => {
+                      const scoreDelta = s.newReadinessScore - baseScore
+                      const runwayGain = s.newRunway - form.runway
+                      return (
+                        <div key={i} style={{ padding: '18px 24px', borderBottom: i < scenarios.length - 1 ? '1px solid #f0ede8' : 'none', display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+                          <div style={{ flex: '1 1 200px' }}>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: '#1c1917', marginBottom: 4 }}>{s.label}</div>
+                            <div style={{ fontSize: 12, color: '#78716c' }}>{s.description}</div>
+                          </div>
+                          <div style={{ display: 'flex', gap: 10, flexShrink: 0, flexWrap: 'wrap' }}>
+                            <div style={{ textAlign: 'center', background: '#f7f6f3', borderRadius: 10, padding: '10px 16px', minWidth: 80 }}>
+                              <div style={{ fontSize: 10, color: '#a8a29e', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>New runway</div>
+                              <div style={{ fontSize: 18, fontWeight: 800, color: '#1c1917', marginTop: 3 }}>{s.newRunway}mo</div>
+                            </div>
+                            <div style={{ textAlign: 'center', background: runwayGain > 0 ? 'rgba(5,150,105,0.06)' : '#f7f6f3', borderRadius: 10, padding: '10px 16px', minWidth: 80 }}>
+                              <div style={{ fontSize: 10, color: '#a8a29e', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Extension</div>
+                              <div style={{ fontSize: 18, fontWeight: 800, color: runwayGain > 0 ? '#059669' : '#78716c', marginTop: 3 }}>{runwayGain > 0 ? '+' : ''}{s.extensionMonths}mo</div>
+                            </div>
+                            <div style={{ textAlign: 'center', background: scoreDelta > 0 ? 'rgba(79,70,229,0.06)' : '#f7f6f3', borderRadius: 10, padding: '10px 16px', minWidth: 80 }}>
+                              <div style={{ fontSize: 10, color: '#a8a29e', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Readiness</div>
+                              <div style={{ fontSize: 18, fontWeight: 800, color: scoreDelta > 0 ? '#4f46e5' : '#78716c', marginTop: 3 }}>{scoreDelta > 0 ? '+' : ''}{scoreDelta.toFixed(0)}pts</div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* Funding Matches */}
             <div style={{ background: '#fff', border: '1px solid #e2ded8', borderRadius: 16, overflow: 'hidden' }}>

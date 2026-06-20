@@ -187,6 +187,156 @@ export function recommendTiming(readinessScore: number, input: StartupInput): Eq
   return 'bootstrap'
 }
 
+// ── 6. Term Sheet Negotiation Simulator ──────────────────────────────────────
+export interface NegotiationScenario {
+  title: string
+  ask: string
+  equityDelta: number      // percentage points founder keeps extra
+  valueAt50M: number       // extra $ founder gets at $50M exit
+  valueAt100M: number
+  difficulty: 'Easy' | 'Medium' | 'Hard'
+  priority: number         // 1 = highest
+}
+
+export function calcNegotiationScenarios(input: StartupInput): NegotiationScenario[] {
+  const finalDilution = simulateDilution(input)
+  const finalFounderPct = finalDilution[finalDilution.length - 1].founderPct + finalDilution[finalDilution.length - 1].coFounderPct
+
+  const scenarios: NegotiationScenario[] = []
+
+  // Scenario 1: Push valuation up 20%
+  if (input.valuation > 0 && input.equityRequested > 0) {
+    const newVal = input.valuation * 1.2
+    const newEq = (input.capitalRequired / (newVal + input.capitalRequired)) * 100
+    const eqDelta = input.equityRequested - newEq
+    const afterDilution = simulateDilution(input, newVal, newEq)
+    const newFounderPct = afterDilution[afterDilution.length - 1].founderPct + afterDilution[afterDilution.length - 1].coFounderPct
+    const delta = newFounderPct - finalFounderPct
+    scenarios.push({
+      title: 'Negotiate valuation up 20%',
+      ask: `Push pre-money from $${(input.valuation / 1_000_000).toFixed(1)}M to $${(newVal / 1_000_000).toFixed(1)}M`,
+      equityDelta: delta,
+      valueAt50M: (delta / 100) * 50_000_000,
+      valueAt100M: (delta / 100) * 100_000_000,
+      difficulty: 'Medium',
+      priority: 0,
+    })
+  }
+
+  // Scenario 2: Reduce equity 3%
+  if (input.equityRequested > 3) {
+    const newEq = input.equityRequested - 3
+    const afterDilution = simulateDilution(input, input.valuation, newEq)
+    const newFounderPct = afterDilution[afterDilution.length - 1].founderPct + afterDilution[afterDilution.length - 1].coFounderPct
+    const delta = newFounderPct - finalFounderPct
+    scenarios.push({
+      title: 'Reduce equity by 3%',
+      ask: `Drop from ${input.equityRequested}% to ${newEq}% — common at this stage`,
+      equityDelta: delta,
+      valueAt50M: (delta / 100) * 50_000_000,
+      valueAt100M: (delta / 100) * 100_000_000,
+      difficulty: 'Easy',
+      priority: 0,
+    })
+  }
+
+  // Scenario 3: Reduce equity 5%
+  if (input.equityRequested > 5) {
+    const newEq = input.equityRequested - 5
+    const afterDilution = simulateDilution(input, input.valuation, newEq)
+    const newFounderPct = afterDilution[afterDilution.length - 1].founderPct + afterDilution[afterDilution.length - 1].coFounderPct
+    const delta = newFounderPct - finalFounderPct
+    scenarios.push({
+      title: 'Reduce equity by 5%',
+      ask: `Firm at ${newEq}% — requires strong justification`,
+      equityDelta: delta,
+      valueAt50M: (delta / 100) * 50_000_000,
+      valueAt100M: (delta / 100) * 100_000_000,
+      difficulty: 'Hard',
+      priority: 0,
+    })
+  }
+
+  // Scenario 4: Waive pro-rata (keep 2% extra in future rounds)
+  const proRataDelta = 2
+  scenarios.push({
+    title: 'Remove investor pro-rata rights',
+    ask: 'No automatic right to follow-on — preserves ~2% in future rounds',
+    equityDelta: proRataDelta,
+    valueAt50M: (proRataDelta / 100) * 50_000_000,
+    valueAt100M: (proRataDelta / 100) * 100_000_000,
+    difficulty: 'Hard',
+    priority: 0,
+  })
+
+  // Rank by value at $50M exit
+  scenarios.sort((a, b) => b.valueAt50M - a.valueAt50M)
+  return scenarios.map((s, i) => ({ ...s, priority: i + 1 }))
+}
+
+// ── 7. Runway Extension Planner ───────────────────────────────────────────────
+export interface RunwayScenario {
+  label: string
+  description: string
+  newRunway: number
+  extensionMonths: number
+  newReadinessScore: number
+  burnChange: number   // % change in burn
+  mrrChange: number    // % change in MRR
+}
+
+export function calcRunwayScenarios(input: StartupInput): RunwayScenario[] {
+  const cash = input.burnRate * input.runway
+  const baseScore = calcReadinessScore(input).score
+
+  function runway(burn: number, mrr: number): number {
+    const effectiveBurn = Math.max(burn - mrr, 0)
+    return effectiveBurn > 0 ? cash / effectiveBurn : 99
+  }
+
+  function readiness(burn: number, mrr: number, growthRate: number): number {
+    return calcReadinessScore({ ...input, burnRate: burn, mrr, arr: mrr * 12, growthRate,
+      runway: Math.min(runway(burn, mrr), 36) }).score
+  }
+
+  const scenarios: RunwayScenario[] = [
+    {
+      label: 'Cut burn 20%',
+      description: 'Reduce non-essential spend, defer hires, renegotiate SaaS tools',
+      newRunway: runway(input.burnRate * 0.8, input.mrr),
+      extensionMonths: runway(input.burnRate * 0.8, input.mrr) - input.runway,
+      newReadinessScore: readiness(input.burnRate * 0.8, input.mrr, input.growthRate),
+      burnChange: -20,
+      mrrChange: 0,
+    },
+    {
+      label: 'Grow MRR 15%/mo for 3 months',
+      description: 'Close pipeline, activate trials, upsell existing customers',
+      newRunway: runway(input.burnRate, input.mrr * Math.pow(1.15, 3)),
+      extensionMonths: runway(input.burnRate, input.mrr * Math.pow(1.15, 3)) - input.runway,
+      newReadinessScore: readiness(input.burnRate, input.mrr * Math.pow(1.15, 3), 15),
+      burnChange: 0,
+      mrrChange: 15,
+    },
+    {
+      label: 'Cut burn 20% + Grow MRR 15%',
+      description: 'Combined efficiency + growth — strongest fundraising position',
+      newRunway: runway(input.burnRate * 0.8, input.mrr * Math.pow(1.15, 3)),
+      extensionMonths: runway(input.burnRate * 0.8, input.mrr * Math.pow(1.15, 3)) - input.runway,
+      newReadinessScore: readiness(input.burnRate * 0.8, input.mrr * Math.pow(1.15, 3), 15),
+      burnChange: -20,
+      mrrChange: 15,
+    },
+  ]
+
+  return scenarios.map(s => ({
+    ...s,
+    newRunway: Math.min(Math.round(s.newRunway), 36),
+    extensionMonths: Math.round(s.extensionMonths * 10) / 10,
+    scoreDelta: s.newReadinessScore - baseScore,
+  } as RunwayScenario))
+}
+
 // ── Master engine ─────────────────────────────────────────────────────────────
 export function runEngines(input: StartupInput): Omit<EquityIQResult, 'aiRecommendation'> {
   const { score: raiseReadinessScore, flags: readinessFlags } = calcReadinessScore(input)
