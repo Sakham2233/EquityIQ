@@ -39,13 +39,31 @@ const inputBase: React.CSSProperties = {
   outline: 'none', fontFamily: 'inherit',
 }
 
-function Field({ label, value, onChange, type = 'text', prefix, suffix, options, span }: {
+function FieldTooltip({ text }: { text: string }) {
+  const [visible, setVisible] = useState(false)
+  return (
+    <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', marginLeft: 5 }}
+      onMouseEnter={() => setVisible(true)} onMouseLeave={() => setVisible(false)}>
+      <span style={{ width: 14, height: 14, borderRadius: '50%', background: '#e2ded8', color: '#78716c', fontSize: 9, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'default', userSelect: 'none', lineHeight: 1 }}>i</span>
+      {visible && (
+        <div style={{ position: 'absolute', bottom: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)', background: '#1c1917', color: '#f5f4f1', fontSize: 12, fontWeight: 400, lineHeight: 1.55, borderRadius: 9, padding: '9px 13px', width: 230, zIndex: 200, pointerEvents: 'none', boxShadow: '0 6px 20px rgba(0,0,0,0.22)', whiteSpace: 'normal' }}>
+          {text}
+          <div style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '5px solid #1c1917' }} />
+        </div>
+      )}
+    </span>
+  )
+}
+
+function Field({ label, value, onChange, type = 'text', prefix, suffix, options, span, tooltip }: {
   label: string; value: string | number; onChange: (v: string) => void
-  type?: string; prefix?: string; suffix?: string; options?: string[]; span?: boolean
+  type?: string; prefix?: string; suffix?: string; options?: string[]; span?: boolean; tooltip?: string
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, gridColumn: span ? 'span 2' : undefined }}>
-      <label style={{ fontSize: 12, fontWeight: 600, color: '#78716c', letterSpacing: '0.04em', textTransform: 'uppercase' }}>{label}</label>
+      <label style={{ fontSize: 12, fontWeight: 600, color: '#78716c', letterSpacing: '0.04em', textTransform: 'uppercase', display: 'flex', alignItems: 'center' }}>
+        {label}{tooltip && <FieldTooltip text={tooltip} />}
+      </label>
       {options ? (
         <select value={value} onChange={e => onChange(e.target.value)} style={{ ...inputBase, cursor: 'pointer' }}>
           {options.map(o => <option key={o} value={o}>{o}</option>)}
@@ -452,36 +470,36 @@ export default function Home() {
             <Card>
               <SectionTitle>Company</SectionTitle>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <Field label="Startup Name" value={form.name} onChange={set('name')} span />
-                <Field label="Industry" value={form.industry} onChange={set('industry')} options={INDUSTRIES} />
-                <Field label="Stage" value={form.stage} onChange={set('stage')} options={STAGES} />
-                <Field label="Location" value={form.location} onChange={set('location')} />
-                <Field label="Business Model" value={form.businessModel} onChange={set('businessModel')} options={BUSINESS_MODELS} />
-                <Field label="Team Size" value={form.teamSize} onChange={set('teamSize')} type="number" suffix="people" />
+                <Field label="Startup Name" value={form.name} onChange={set('name')} span tooltip="The legal or trading name of your company." />
+                <Field label="Industry" value={form.industry} onChange={set('industry')} options={INDUSTRIES} tooltip="The primary sector your startup operates in. Used to benchmark your metrics against industry norms." />
+                <Field label="Stage" value={form.stage} onChange={set('stage')} options={STAGES} tooltip="Your current funding stage. Pre-Seed is idea/MVP, Seed is early traction, Series A is scaling, Series B is growth." />
+                <Field label="Location" value={form.location} onChange={set('location')} tooltip="The city or country where your company is headquartered. Affects investor network and market context." />
+                <Field label="Business Model" value={form.businessModel} onChange={set('businessModel')} options={BUSINESS_MODELS} tooltip="How your company generates revenue. B2B = sells to businesses, B2C = sells to consumers, Marketplace = connects buyers and sellers." />
+                <Field label="Team Size" value={form.teamSize} onChange={set('teamSize')} type="number" suffix="people" tooltip="Total number of full-time employees currently on payroll. Used to calculate burn per employee efficiency." />
               </div>
             </Card>
 
             <Card>
               <SectionTitle>Financials</SectionTitle>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <Field label="Annual Recurring Revenue" value={form.arr} onChange={set('arr')} type="number" prefix={currency.symbol} />
-                <Field label="Monthly Recurring Revenue" value={form.mrr} onChange={set('mrr')} type="number" prefix={currency.symbol} />
-                <Field label="Monthly Growth Rate" value={form.growthRate} onChange={set('growthRate')} type="number" suffix="%" />
-                <Field label="Monthly Burn Rate" value={form.burnRate} onChange={set('burnRate')} type="number" prefix={currency.symbol} />
-                <Field label="Runway" value={form.runway} onChange={set('runway')} type="number" suffix="months" />
-                <Field label="Customer Count" value={form.customerCount} onChange={set('customerCount')} type="number" />
-                <Field label="Total Raised to Date" value={form.totalRaised} onChange={set('totalRaised')} type="number" prefix={currency.symbol} />
-                <Field label="Pipeline Value" value={form.pipelineValue} onChange={set('pipelineValue')} type="number" prefix={currency.symbol} />
+                <Field label="Annual Recurring Revenue" value={form.arr} onChange={set('arr')} type="number" prefix={currency.symbol} tooltip="Annualised subscription or contract revenue. Excludes one-off payments. For non-SaaS, use your projected annual revenue." />
+                <Field label="Monthly Recurring Revenue" value={form.mrr} onChange={set('mrr')} type="number" prefix={currency.symbol} tooltip="Predictable revenue collected each month from active subscriptions or contracts. ARR ÷ 12 for subscription businesses." />
+                <Field label="Monthly Growth Rate" value={form.growthRate} onChange={set('growthRate')} type="number" suffix="%" tooltip="Month-over-month percentage increase in MRR. 10–20% MoM is considered strong at seed stage." />
+                <Field label="Monthly Burn Rate" value={form.burnRate} onChange={set('burnRate')} type="number" prefix={currency.symbol} tooltip="Total cash spent per month across salaries, infrastructure, marketing, and operations." />
+                <Field label="Runway" value={form.runway} onChange={set('runway')} type="number" suffix="months" tooltip="How many months of cash you have left at the current burn rate. Cash in bank ÷ monthly burn. 18+ months is ideal before raising." />
+                <Field label="Customer Count" value={form.customerCount} onChange={set('customerCount')} type="number" tooltip="Total number of active paying customers today. Used to benchmark traction for your stage." />
+                <Field label="Total Raised to Date" value={form.totalRaised} onChange={set('totalRaised')} type="number" prefix={currency.symbol} tooltip="All external funding received across previous rounds (grants, angels, VCs). Helps investors understand your funding history." />
+                <Field label="Pipeline Value" value={form.pipelineValue} onChange={set('pipelineValue')} type="number" prefix={currency.symbol} tooltip="Estimated total value of deals currently in your sales pipeline — prospects who have not yet signed but are in active conversations." />
               </div>
             </Card>
 
             <Card>
               <SectionTitle>Unit Economics</SectionTitle>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <Field label="Gross Margin" value={form.grossMargin} onChange={set('grossMargin')} type="number" suffix="%" />
-                <Field label="Monthly Churn Rate" value={form.churnRate} onChange={set('churnRate')} type="number" suffix="%" />
-                <Field label="Customer Acquisition Cost" value={form.cac} onChange={set('cac')} type="number" prefix={currency.symbol} />
-                <Field label="Avg Revenue Per Customer" value={form.customerCount > 0 ? Math.round(form.arr / form.customerCount) : 0} onChange={() => {}} type="number" prefix={currency.symbol} />
+                <Field label="Gross Margin" value={form.grossMargin} onChange={set('grossMargin')} type="number" suffix="%" tooltip="Revenue minus direct cost of delivering your product/service, as a % of revenue. SaaS targets 70%+. Lower margins mean less capital efficiency." />
+                <Field label="Monthly Churn Rate" value={form.churnRate} onChange={set('churnRate')} type="number" suffix="%" tooltip="Percentage of customers (or revenue) lost each month. Under 2% is healthy for B2B SaaS. High churn undermines the value of your ARR." />
+                <Field label="Customer Acquisition Cost" value={form.cac} onChange={set('cac')} type="number" prefix={currency.symbol} tooltip="Average total cost to acquire one new paying customer — includes sales salaries, marketing spend, and commissions." />
+                <Field label="Avg Revenue Per Customer" value={form.customerCount > 0 ? Math.round(form.arr / form.customerCount) : 0} onChange={() => {}} type="number" prefix={currency.symbol} tooltip="ARR divided by number of customers. Calculated automatically. Higher ARPU means faster payback on your CAC." />
               </div>
               <div style={{ marginTop: 12, padding: '10px 14px', background: '#f7f6f3', borderRadius: 8, display: 'flex', gap: 24, flexWrap: 'wrap' }}>
                 <div style={{ fontSize: 12 }}>
@@ -511,10 +529,10 @@ export default function Home() {
                 {uploadedFile && <span style={{ fontSize: 11, color: '#b45309', background: 'rgba(180,83,9,0.08)', border: '1px solid rgba(180,83,9,0.2)', borderRadius: 6, padding: '3px 8px', fontWeight: 600 }}>✏️ Fill in manually</span>}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <Field label="Capital Required" value={form.capitalRequired} onChange={set('capitalRequired')} type="number" prefix={currency.symbol} />
-                <Field label="Pre-Money Valuation" value={form.valuation} onChange={set('valuation')} type="number" prefix={currency.symbol} />
-                <Field label="Investor Offer" value={form.investorOffer} onChange={set('investorOffer')} type="number" prefix={currency.symbol} />
-                <Field label="Equity Requested" value={form.equityRequested} onChange={set('equityRequested')} type="number" suffix="%" />
+                <Field label="Capital Required" value={form.capitalRequired} onChange={set('capitalRequired')} type="number" prefix={currency.symbol} tooltip="The total amount you are looking to raise in this round. Should give you 18–24 months of runway post-close." />
+                <Field label="Pre-Money Valuation" value={form.valuation} onChange={set('valuation')} type="number" prefix={currency.symbol} tooltip="Your company's agreed value before new investment is added. Post-money = pre-money + investment. This is what determines how much equity you give away." />
+                <Field label="Investor Offer" value={form.investorOffer} onChange={set('investorOffer')} type="number" prefix={currency.symbol} tooltip="The actual amount the investor is willing to put in — may differ from your ask. Used to calculate their resulting ownership stake." />
+                <Field label="Equity Requested" value={form.equityRequested} onChange={set('equityRequested')} type="number" suffix="%" tooltip="The ownership percentage the investor wants in exchange for their investment. Typical ranges: 10–25% at pre-seed/seed, 15–25% at Series A." />
               </div>
             </Card>
 
@@ -524,10 +542,10 @@ export default function Home() {
                 {uploadedFile && <span style={{ fontSize: 11, color: '#b45309', background: 'rgba(180,83,9,0.08)', border: '1px solid rgba(180,83,9,0.2)', borderRadius: 6, padding: '3px 8px', fontWeight: 600 }}>✏️ Fill in manually</span>}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <Field label="Founder %" value={form.founderPct} onChange={set('founderPct')} type="number" suffix="%" />
-                <Field label="Co-Founder %" value={form.coFounderPct} onChange={set('coFounderPct')} type="number" suffix="%" />
-                <Field label="Employee Pool %" value={form.employeePoolPct} onChange={set('employeePoolPct')} type="number" suffix="%" />
-                <Field label="Existing Investors %" value={form.existingInvestorPct} onChange={set('existingInvestorPct')} type="number" suffix="%" />
+                <Field label="Founder %" value={form.founderPct} onChange={set('founderPct')} type="number" suffix="%" tooltip="Percentage of the company owned by the primary founder before this round closes." />
+                <Field label="Co-Founder %" value={form.coFounderPct} onChange={set('coFounderPct')} type="number" suffix="%" tooltip="Combined percentage owned by all co-founders. Enter 0 if there is only one founder." />
+                <Field label="Employee Pool %" value={form.employeePoolPct} onChange={set('employeePoolPct')} type="number" suffix="%" tooltip="Shares reserved for the employee stock option plan (ESOP). Typically 10–20%. These vest over time and are used to attract and retain talent." />
+                <Field label="Existing Investors %" value={form.existingInvestorPct} onChange={set('existingInvestorPct')} type="number" suffix="%" tooltip="Combined ownership held by all previous investors (angels, pre-seed VCs, etc.). Enter 0 if this is your first external round." />
               </div>
             </Card>
 
