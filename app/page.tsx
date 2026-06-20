@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSession, signIn, signOut } from 'next-auth/react'
 import { StartupInput, EquityIQResult } from '@/lib/types'
 import { fmt$, fmtPct } from '@/lib/utils'
@@ -10,15 +10,17 @@ import {
 } from 'recharts'
 
 const CURRENCIES = [
-  { code: 'USD', symbol: '$',  flag: '🇺🇸', name: 'US Dollar' },
-  { code: 'GBP', symbol: '£',  flag: '🇬🇧', name: 'British Pound' },
-  { code: 'EUR', symbol: '€',  flag: '🇪🇺', name: 'Euro' },
-  { code: 'INR', symbol: '₹',  flag: '🇮🇳', name: 'Indian Rupee' },
-  { code: 'CAD', symbol: 'C$', flag: '🇨🇦', name: 'Canadian Dollar' },
-  { code: 'AUD', symbol: 'A$', flag: '🇦🇺', name: 'Australian Dollar' },
-  { code: 'SGD', symbol: 'S$', flag: '🇸🇬', name: 'Singapore Dollar' },
-  { code: 'AED', symbol: 'د.إ', flag: '🇦🇪', name: 'UAE Dirham' },
+  { code: 'USD', symbol: '$',   flag: '🇺🇸', name: 'US Dollar',          rate: 1      },
+  { code: 'GBP', symbol: '£',   flag: '🇬🇧', name: 'British Pound',       rate: 0.79   },
+  { code: 'EUR', symbol: '€',   flag: '🇪🇺', name: 'Euro',                rate: 0.92   },
+  { code: 'INR', symbol: '₹',   flag: '🇮🇳', name: 'Indian Rupee',        rate: 83.5   },
+  { code: 'CAD', symbol: 'C$',  flag: '🇨🇦', name: 'Canadian Dollar',     rate: 1.37   },
+  { code: 'AUD', symbol: 'A$',  flag: '🇦🇺', name: 'Australian Dollar',   rate: 1.54   },
+  { code: 'SGD', symbol: 'S$',  flag: '🇸🇬', name: 'Singapore Dollar',    rate: 1.34   },
+  { code: 'AED', symbol: 'د.إ', flag: '🇦🇪', name: 'UAE Dirham',          rate: 3.67   },
 ]
+
+const MONEY_FIELDS = ['arr', 'mrr', 'burnRate', 'pipelineValue', 'totalRaised', 'capitalRequired', 'valuation', 'investorOffer', 'cac'] as const
 
 const STAGES: string[] = ['pre-seed', 'seed', 'series-a', 'series-b']
 const INDUSTRIES = ['SaaS', 'FinTech', 'HealthTech', 'DeepTech', 'E-commerce', 'EdTech', 'CleanTech', 'Other']
@@ -129,6 +131,20 @@ export default function Home() {
   const [form, setForm] = useState<StartupInput>(DEFAULT)
   const [result, setResult] = useState<EquityIQResult | null>(null)
   const [currency, setCurrency] = useState(CURRENCIES[0])
+  const prevRateRef = useRef(CURRENCIES[0].rate)
+
+  useEffect(() => {
+    const prev = prevRateRef.current
+    if (prev === currency.rate) return
+    const ratio = currency.rate / prev
+    setForm(f => {
+      const updated = { ...f }
+      for (const k of MONEY_FIELDS) (updated as unknown as Record<string, number>)[k] = Math.round((f[k] as number) * ratio)
+      return updated
+    })
+    prevRateRef.current = currency.rate
+  }, [currency])
+
   const [loading, setLoading] = useState(false)
   const [extracting, setExtracting] = useState(false)
   const [error, setError] = useState('')
