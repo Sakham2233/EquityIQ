@@ -720,11 +720,11 @@ export default function Home() {
 
         {/* Top row — stats bar */}
         <div style={{ borderBottom: '1px solid #f0ede8', background: '#fafaf9' }}>
-          <div style={{ maxWidth: 880, margin: '0 auto', padding: '14px 24px', display: 'flex', flexWrap: 'wrap', gap: 0, justifyContent: 'space-around', alignItems: 'center' }}>
+          <div style={{ maxWidth: 880, margin: '0 auto', padding: '14px 24px', display: 'flex', gap: 0, justifyContent: 'space-between', alignItems: 'center' }}>
             {[
               { value: '500+', label: 'Funding sources tracked' },
               { value: '5', label: 'Financial engines' },
-              { value: 'GPT-4o', label: 'AI model' },
+              { value: 'AI', label: 'Powered analysis' },
               { value: 'Free', label: 'Core plan' },
             ].map((s, i, arr) => (
               <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
