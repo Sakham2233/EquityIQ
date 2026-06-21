@@ -91,15 +91,15 @@ function Card({ children, style }: { children: React.ReactNode; style?: React.CS
   )
 }
 
-function SectionTitle({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+function SectionTitle({ children, style, tooltip }: { children: React.ReactNode; style?: React.CSSProperties; tooltip?: string }) {
   return (
-    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#4f46e5', marginBottom: 20, ...style }}>
-      {children}
+    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#4f46e5', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 5, ...style }}>
+      {children}{tooltip && <FieldTooltip text={tooltip} />}
     </div>
   )
 }
 
-function ScoreRing({ score, label, color }: { score: number; label: string; color: string }) {
+function ScoreRing({ score, label, color, tooltip }: { score: number; label: string; color: string; tooltip?: string }) {
   const r = 38, circ = 2 * Math.PI * r
   const dash = (score / 100) * circ
   return (
@@ -111,15 +111,19 @@ function ScoreRing({ score, label, color }: { score: number; label: string; colo
           strokeLinecap="round" style={{ transition: 'stroke-dasharray 1s ease' }} />
         <text x="50" y="55" textAnchor="middle" fill="#1c1917" fontSize="22" fontWeight="800">{score}</text>
       </svg>
-      <span style={{ fontSize: 12, color: '#78716c', fontWeight: 500, textAlign: 'center' }}>{label}</span>
+      <span style={{ fontSize: 12, color: '#78716c', fontWeight: 500, textAlign: 'center', display: 'flex', alignItems: 'center', gap: 4 }}>
+        {label}{tooltip && <FieldTooltip text={tooltip} />}
+      </span>
     </div>
   )
 }
 
-function StatCard({ label, value, sub, color, bg }: { label: string; value: string; sub?: string; color?: string; bg?: string }) {
+function StatCard({ label, value, sub, color, bg, tooltip }: { label: string; value: string; sub?: string; color?: string; bg?: string; tooltip?: string }) {
   return (
     <div style={{ background: bg || '#fff', border: '1px solid #e2ded8', borderRadius: 12, padding: '20px 24px' }}>
-      <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#78716c', marginBottom: 10 }}>{label}</div>
+      <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#78716c', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 4 }}>
+        {label}{tooltip && <FieldTooltip text={tooltip} />}
+      </div>
       <div style={{ fontSize: 26, fontWeight: 800, color: color || '#1c1917', letterSpacing: '-0.03em', lineHeight: 1 }}>{value}</div>
       {sub && <div style={{ fontSize: 12, color: '#a8a29e', marginTop: 6 }}>{sub}</div>}
     </div>
@@ -644,24 +648,30 @@ export default function Home() {
 
             {/* Score rings */}
             <Card style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: 24, padding: '36px 32px' }}>
-              <ScoreRing score={result.raiseReadinessScore} label="Raise Readiness" color={scoreColor(result.raiseReadinessScore)} />
+              <ScoreRing score={result.raiseReadinessScore} label="Raise Readiness" color={scoreColor(result.raiseReadinessScore)}
+                tooltip="Scores 0–100 how prepared your startup is to fundraise. Factors in runway, monthly growth rate, ARR vs burn coverage, stage-appropriate valuation, and customer traction. 70+ is strong." />
               <div style={{ width: 1, background: '#e2ded8', alignSelf: 'stretch' }} />
-              <ScoreRing score={result.offerQualityScore} label="Offer Quality" color={scoreColor(result.offerQualityScore)} />
+              <ScoreRing score={result.offerQualityScore} label="Offer Quality" color={scoreColor(result.offerQualityScore)}
+                tooltip="Scores 0–100 how fair the investor's offer is. Looks at equity % vs stage norms, ARR multiple, capital ask size, gross margin, and churn. 70+ means the terms are in a reasonable range." />
               <div style={{ width: 1, background: '#e2ded8', alignSelf: 'stretch' }} />
-              <ScoreRing score={Math.round(result.founderValuePreserved)} label="Value Preserved %" color="#059669" />
+              <ScoreRing score={Math.round(result.founderValuePreserved)} label="Value Preserved %" color="#059669"
+                tooltip="What % of your current founder ownership survives after this round and two projected future rounds. 100% = no dilution. Typically founders end up with 40–60% of their original stake after Series A." />
             </Card>
 
             {/* Key stats */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
               <StatCard label="Founder Ownership (Final)"
                 value={fmtPct(result.dilutionForecast[result.dilutionForecast.length - 1].founderPct + result.dilutionForecast[result.dilutionForecast.length - 1].coFounderPct)}
-                sub="combined, after all rounds" color="#4f46e5" bg="rgba(79,70,229,0.04)" />
+                sub="combined, after all rounds" color="#4f46e5" bg="rgba(79,70,229,0.04)"
+                tooltip="Your combined founder + co-founder ownership percentage after this round and two projected future rounds. This is the stake you would hold at a typical exit." />
               <StatCard label="Post-Money Valuation"
                 value={fmt$(result.dilutionForecast[0].postMoneyValuation, currency.symbol)}
-                sub={`${fmtPct(result.dilutionForecast[0].newInvestorPct)} investor stake`} />
+                sub={`${fmtPct(result.dilutionForecast[0].newInvestorPct)} investor stake`}
+                tooltip="Your company's total value immediately after the investment closes. Calculated as: pre-money valuation + investor cheque. This determines the investor's ownership percentage." />
               <StatCard label={`Founder Value at ${currency.symbol}100M Exit`}
                 value={fmt$(result.exitValues.find(e => e.exit === 100_000_000)?.founderValue ?? 0, currency.symbol)}
-                sub="after all modelled rounds" color="#059669" bg="rgba(5,150,105,0.04)" />
+                sub="after all modelled rounds" color="#059669" bg="rgba(5,150,105,0.04)"
+                tooltip="The cash you personally receive if the company is acquired for 100M, based on your projected ownership after all modelled rounds. Does not account for liquidation preferences." />
             </div>
 
             {/* ── Industry Benchmarks ── */}
@@ -727,7 +737,7 @@ export default function Home() {
 
             {/* Dilution chart */}
             <Card>
-              <SectionTitle>Ownership Dilution Over Rounds</SectionTitle>
+              <SectionTitle tooltip="Shows how founder and co-founder ownership % shrinks with each funding round. Each new investor takes a slice, which proportionally reduces everyone else's stake. The gap between the two lines is the difference between founder and co-founder ownership.">Ownership Dilution Over Rounds</SectionTitle>
               <ResponsiveContainer width="100%" height={220}>
                 <AreaChart data={result.dilutionForecast} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
                   <defs>
@@ -753,7 +763,7 @@ export default function Home() {
 
             {/* Exit scenarios */}
             <Card>
-              <SectionTitle>Founder Value at Exit Scenarios</SectionTitle>
+              <SectionTitle tooltip="How much cash the founder and co-founder each receive at four different acquisition prices, based on their projected ownership after all modelled rounds. Use this to understand what your equity is actually worth at realistic exit sizes.">Founder Value at Exit Scenarios</SectionTitle>
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={result.exitValues.map(e => ({ exit: fmt$(e.exit, currency.symbol), founder: e.founderValue, coFounder: e.coFounderValue }))} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0ede8" />
@@ -993,15 +1003,15 @@ export default function Home() {
                           </div>
                           <div style={{ display: 'flex', gap: 10, flexShrink: 0, flexWrap: 'wrap' }}>
                             <div style={{ textAlign: 'center', background: '#f7f6f3', borderRadius: 10, padding: '10px 16px', minWidth: 80 }}>
-                              <div style={{ fontSize: 10, color: '#a8a29e', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>New runway</div>
+                              <div style={{ fontSize: 10, color: '#a8a29e', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>New runway <FieldTooltip text="Projected months of cash remaining after applying this scenario — capped at 36 months." /></div>
                               <div style={{ fontSize: 18, fontWeight: 800, color: '#1c1917', marginTop: 3 }}>{s.newRunway}mo</div>
                             </div>
                             <div style={{ textAlign: 'center', background: runwayGain > 0 ? 'rgba(5,150,105,0.06)' : '#f7f6f3', borderRadius: 10, padding: '10px 16px', minWidth: 80 }}>
-                              <div style={{ fontSize: 10, color: '#a8a29e', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Extension</div>
+                              <div style={{ fontSize: 10, color: '#a8a29e', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>Extension <FieldTooltip text="Extra months of runway this scenario adds on top of your current runway." /></div>
                               <div style={{ fontSize: 18, fontWeight: 800, color: runwayGain > 0 ? '#059669' : '#78716c', marginTop: 3 }}>{runwayGain > 0 ? '+' : ''}{s.extensionMonths}mo</div>
                             </div>
                             <div style={{ textAlign: 'center', background: scoreDelta > 0 ? 'rgba(79,70,229,0.06)' : '#f7f6f3', borderRadius: 10, padding: '10px 16px', minWidth: 80 }}>
-                              <div style={{ fontSize: 10, color: '#a8a29e', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Readiness</div>
+                              <div style={{ fontSize: 10, color: '#a8a29e', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>Readiness <FieldTooltip text="How much your Raise Readiness Score improves after applying this scenario — better metrics make you more fundable." /></div>
                               <div style={{ fontSize: 18, fontWeight: 800, color: scoreDelta > 0 ? '#4f46e5' : '#78716c', marginTop: 3 }}>{scoreDelta > 0 ? '+' : ''}{scoreDelta.toFixed(0)}pts</div>
                             </div>
                           </div>
@@ -1192,9 +1202,12 @@ export default function Home() {
                 <Card>
                   <SectionTitle>Impact of Waiting 6 Months</SectionTitle>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-                    <StatCard label="Ownership gain from waiting" value={`${delta >= 0 ? '+' : ''}${fmtPct(delta)}`} color={delta >= 0 ? '#059669' : '#dc2626'} sub="founder + co-founder" />
-                    <StatCard label="Valuation uplift (later)" value={fmt$(latF.postMoneyValuation - nowF.postMoneyValuation, currency.symbol)} color="#4f46e5" sub="projected post-money diff" />
-                    <StatCard label="Recommended path" value={result.recommendedTiming === 'raise-now' ? 'Raise Now' : 'Raise Later'} color="#4f46e5" />
+                    <StatCard label="Ownership gain from waiting" value={`${delta >= 0 ? '+' : ''}${fmtPct(delta)}`} color={delta >= 0 ? '#059669' : '#dc2626'} sub="founder + co-founder"
+                      tooltip="The extra ownership percentage you retain by waiting 6 months. A higher valuation means you give away less equity for the same amount of capital." />
+                    <StatCard label="Valuation uplift (later)" value={fmt$(latF.postMoneyValuation - nowF.postMoneyValuation, currency.symbol)} color="#4f46e5" sub="projected post-money diff"
+                      tooltip="How much more your post-money valuation would be if you wait, assuming 40% company growth in 6 months. This extra value directly reduces dilution." />
+                    <StatCard label="Recommended path" value={result.recommendedTiming === 'raise-now' ? 'Raise Now' : 'Raise Later'} color="#4f46e5"
+                      tooltip="Based on your runway, growth rate, and readiness score. If runway is under 6 months or score is 70+, raise now. Otherwise waiting to grow more metrics is likely better." />
                   </div>
                 </Card>
               )
@@ -1202,7 +1215,7 @@ export default function Home() {
 
             {/* Chart */}
             <Card>
-              <SectionTitle>Founder Ownership: Now vs Later</SectionTitle>
+              <SectionTitle tooltip="Compares your founder + co-founder combined ownership across each round if you raise today vs waiting 6 months. The gap between the two lines shows how much equity you preserve by waiting.">Founder Ownership: Now vs Later</SectionTitle>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={result.raiseNowScenario.map((r, i) => ({
                   round: r.round,
